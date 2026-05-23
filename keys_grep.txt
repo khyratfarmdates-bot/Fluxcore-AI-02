@@ -1,0 +1,131 @@
+src/marketing/components/UseCases.tsx:65:          <div key={i} className="flex items-center gap-3 text-sm font-bold text-slate-300">
+src/marketing/components/Features.tsx:54:            <div key={i} className="group relative bg-slate-900/50 border border-slate-800 rounded-[32px] p-8 hover:bg-slate-800/50 transition-all duration-300">
+src/marketing/components/Pricing.tsx:45:            <div key={i} className={cn(
+src/marketing/components/Pricing.tsx:67:                  <div key={j} className="flex items-center gap-3 text-sm font-bold text-slate-300">
+src/marketing/SEOStudio.tsx:347:                    key={opt.id}
+src/marketing/SEOStudio.tsx:483:                          <div key={i} className="flex gap-3 text-xs p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300">
+src/marketing/SEOStudio.tsx:495:                          <div key={i} className="flex gap-3 text-xs p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300">
+src/marketing/SEOStudio.tsx:515:                          <div key={i} className="flex gap-4 p-4 bg-slate-950 border border-slate-800/80 rounded-2xl group hover:border-indigo-500/30 transition-colors items-start">
+src/marketing/SEOStudio.tsx:589:                      <span key={i} className="px-3 py-1.5 bg-slate-900 border border-slate-805 rounded-xl text-[11px] font-extrabold text-slate-300 hover:text-white hover:border-slate-500 transition-all cursor-default flex items-center gap-1">
+src/integrations/ConnectedAccountsView.tsx:97:            <div key={i} className="h-48 bg-slate-900/50 border border-slate-800 rounded-[2.5rem] animate-pulse"></div>
+src/integrations/ConnectedAccountsView.tsx:102:              <AccountCard key={account.id} account={account} onDisconnect={() => handleDisconnect(account.id)} />
+src/integrations/ConnectedAccountsView.tsx:197:                  key={p} 
+src/integrations/IntegrationsHubView.tsx:216:          <div key={conn.id} className="bg-slate-900/40 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 group hover:bg-slate-900 transition-colors">
+src/integrations/IntegrationsHubView.tsx:288:             key={cat} 
+src/integrations/IntegrationsHubView.tsx:300:             key={provider.id} 
+src/integrations/IntegrationsHubView.tsx:390:                     <div key={provider} className="flex items-center justify-between p-4 bg-slate-950/40 rounded-2xl border border-white/5 hover:border-indigo-500/20 transition-all">
+src/intelligence/ExecutiveAgentDashboard.tsx:76:                key={agent.role}
+src/intelligence/ExecutiveAgentDashboard.tsx:102:                     <span key={cap} className="text-[7px] font-black uppercase px-2 py-1 bg-slate-950 border border-white/10 rounded-full text-slate-400">
+src/intelligence/ExecutiveAgentDashboard.tsx:136:                           key={task.id}
+src/intelligence/KnowledgeVisualizationDashboard.tsx:97:                     key={node.id}
+src/intelligence/KnowledgeVisualizationDashboard.tsx:139:                   key={selectedNode.id}
+src/intelligence/KnowledgeVisualizationDashboard.tsx:166:                             <div key={link.id} className="p-4 bg-slate-900/50 border border-slate-800 rounded-2xl flex items-center justify-between group hover:border-slate-600 transition-colors">
+src/core/diagnostics/SystemHealthDashboard.tsx:69:                 <div key={key} className="flex items-center gap-3 p-3 bg-slate-950 border border-slate-800 rounded-xl">
+src/core/DevConsoleView.tsx:178:                  <tr key={log.id} className="hover:bg-slate-800/20 transition-colors">
+src/core/DevConsoleView.tsx:210:            <div key={key} className="flex justify-between items-center p-4 bg-slate-950 border border-slate-800/80 rounded-xl">
+src/core/monitoring/SystemReliabilityDashboard.tsx:123:                        key={i}
+src/core/monitoring/SystemReliabilityDashboard.tsx:179:                        <div key={err.id} className="p-6 hover:bg-slate-800/10 transition-colors group">
+src/core/FluxBotIcon.tsx:67:                key={i}
+src/core/SystemIntelligence.tsx:172:                        <Cell key={`cell-${index}`} fill={index === 0 ? '#6366f1' : '#f59e0b'} />
+src/core/CommandCenter.tsx:88:                    key={action.module} 
+src/brand/BrandIdentityView.tsx:271:                        key={brand.id}
+src/brand/BrandIdentityView.tsx:351:                                    key={idx} 
+src/brand/BrandIdentityView.tsx:464:                        <button key={p} onClick={() => setFormData({...formData, personality: p})} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${formData.personality === p ? 'bg-rose-600 border-rose-500 text-white shadow-lg' : 'bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800'}`}>
+src/brand/BrandIdentityView.tsx:503:                      <div key={tone.id} className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-3 relative group">
+src/brand/BrandIdentityView.tsx:589:                                <div key={idx} className="flex items-center gap-1.5 bg-slate-900/40 p-1.5 pr-2.5 rounded-full border border-slate-800/80 shadow-inner">
+src/agents/AIAssistant.tsx:685:                      key={s.id}
+src/agents/AIAssistant.tsx:759:              <div key={`${msg.id}-${i}`} className={cn("flex w-full relative z-10", msg.role === "assistant" ? "justify-start" : "justify-end")}>
+src/agents/AIAssistant.tsx:774:                         <div key={sIdx} className="flex items-center gap-3">
+src/automation/UnifiedOperationsDashboard.tsx:152:                            key={event.id}
+src/automation/UnifiedOperationsDashboard.tsx:228:                          <div key={flow.id} className="p-4 hover:bg-slate-800/20 transition-all flex items-center justify-between group">
+src/automation/ActivityLogs.tsx:64:            <div key={log.id} className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-slate-900/20 transition-colors">
+src/automation/TemplatesList.tsx:77:          <div key={idx} className="bg-slate-950 border border-slate-800 p-6 rounded-3xl flex flex-col gap-4 items-start hover:border-slate-700 transition-colors">
+src/automation/TemplatesList.tsx:88:                <React.Fragment key={i}>
+src/automation/WorkflowBuilder.tsx:119:                  key={step.id} 
+src/automation/WorkflowBuilder.tsx:184:                <React.Fragment key={step.id}>
+src/automation/AutomationView.tsx:33:              key={tab.id}
+src/automation/AutomationView.tsx:52:            key={activeTab}
+src/automation/WorkflowList.tsx:82:          <div key={w.id} onClick={() => onEdit(w)} className="bg-slate-950 border border-slate-800 p-5 rounded-2xl hover:border-indigo-500/50 transition-all cursor-pointer group flex flex-col gap-4 relative overflow-hidden">
+src/runtime/DiagnosticsConsole.tsx:58:            <div key={service.id} className="bg-slate-900/60 border border-slate-800/80 p-4 rounded-2xl flex items-center justify-between group hover:border-indigo-500/30 transition-all">
+src/executive/ExecutiveChatView.tsx:141:                    key={i}
+src/executive/ExecutiveChatView.tsx:158:                key={`chat-msg-${msg.id || i}-${i}`}
+src/executive/ExecutiveChatView.tsx:194:                          key={opt.id}
+src/executive/ExecutiveChatView.tsx:222:                           key={i} 
+src/executive/ExecutiveChatView.tsx:316:            key={`${step.id}-${idx}`}
+src/onboarding/MissionControl.tsx:66:              <div key={m.id} className={cn(
+src/onboarding/CinematicOnboarding.tsx:97:              <div key={s.id} className={cn(
+src/onboarding/CinematicOnboarding.tsx:110:                 key={step}
+src/onboarding/CinematicOnboarding.tsx:126:                 key={step}
+src/onboarding/CinematicOnboarding.tsx:213:           key={g.id}
+src/onboarding/CinematicOnboarding.tsx:246:           key={l.id}
+src/onboarding/CinematicOnboarding.tsx:280:           key={a.key}
+src/analytics/AnalyticsView.tsx:34:              key={tab.id}
+src/analytics/AnalyticsView.tsx:52:            key={activeTab}
+src/analytics/IntelligenceDashboard.tsx:155:                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} fillOpacity={0.8} />
+src/analytics/IntelligenceDashboard.tsx:178:                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+src/analytics/IntelligenceDashboard.tsx:187:                     <div key={item.name} className="flex items-center justify-between text-xs font-bold">
+src/analytics/IntelligenceDashboard.tsx:202:                    <div key={i} className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between group hover:border-indigo-500/50 transition-all">
+src/analytics/IntelligenceDashboard.tsx:230:                  key={insight.id} 
+src/analytics/IntelligenceDashboard.tsx:262:                   <div key={hour} className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm font-black text-white">
+src/extensions/MarketplaceDashboard.tsx:94:                    <MarketItemCard key={item.id} item={item} />
+src/extensions/MarketplaceDashboard.tsx:108:                    <InstalledExtCard key={ext.id} ext={ext} />
+src/media/tabs/ImageAnalysis.tsx:215:                   <button key={tag} className="px-3 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 text-[10px] font-bold hover:bg-indigo-500 hover:text-white transition-all">
+src/media/tabs/ImageGeneration.tsx:170:                      key={ratio.id}
+src/media/tabs/VideoSceneBuilder.tsx:169:                       key={style}
+src/media/tabs/VideoSceneBuilder.tsx:180:                       key={ratio}
+src/media/tabs/VideoSceneBuilder.tsx:250:           <div key={scene.id} className="bg-slate-900/50 border border-slate-800 p-4 rounded-2xl flex gap-4 relative group hover:border-slate-700 transition-colors">
+src/media/tabs/VoiceGeneration.tsx:238:                      key={v.id}
+src/media/tabs/VoiceGeneration.tsx:263:                    key={`${v.voiceURI}-${i}`}
+src/media/tabs/MediaHistory.tsx:61:                     <div key={gen.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden group hover:border-slate-600 transition-colors cursor-pointer">
+src/media/components/GenerationQueue.tsx:59:            <div key={item.id} className="bg-slate-950/80 border border-slate-800 p-4 rounded-2xl relative overflow-hidden group transition-all hover:border-slate-700">
+src/media/components/AIStylesSelect.tsx:17:          key={style.id}
+src/media/MediaLabView.tsx:71:                   key={tool.id}
+src/media/MediaLabView.tsx:95:                   key={item.id}
+src/studio/HistoryView.tsx:85:              key={item.id}
+src/studio/SettingsView.tsx:110:                  key={p}
+src/studio/StudioView.tsx:243:                    <span key={i} className="text-sm text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-lg font-medium">
+src/studio/StudioView.tsx:313:        {options.map((opt: any) => <option key={opt.val} value={opt.val}>{opt.label}</option>)}
+src/ChannelsListView.tsx:310:                  key={platform.id}
+src/ChannelsListView.tsx:356:                key={platform.id}
+src/billing/BillingDashboard.tsx:133:         <div key={plan.id} className={cn(
+src/billing/BillingDashboard.tsx:206:                 <tr key={i} className="hover:bg-slate-800/20 transition-colors">
+src/publishing/PublishingQueue.tsx:89:                <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
+src/publishing/UnifiedPostManager.tsx:189:              key={p.id}
+src/publishing/CalendarView.tsx:72:            <div key={d} className="p-3 text-center text-xs font-bold text-slate-400 border-l border-slate-800/50 last:border-0">{d}</div>
+src/publishing/CalendarView.tsx:82:              <div key={day} className="border-b border-l border-slate-800/50 p-2 min-h-[100px] flex flex-col gap-1 group relative transition-colors hover:bg-slate-800/20">
+src/publishing/CalendarView.tsx:94:                    <div key={ev.id} className={cn(
+src/publishing/ApprovalWorkflow.tsx:53:          <div key={item.id} onClick={() => setSelected(item)} className={`p-4 bg-slate-950 border rounded-xl cursor-pointer hover:border-indigo-500/50 transition-colors ${selected?.id === item.id ? 'border-indigo-500' : 'border-slate-800'}`}>
+src/publishing/PublishingView.tsx:29:              key={tab.id}
+src/publishing/MediaLibrary.tsx:171:                 <div key={folder} className="p-4 bg-slate-900/50 border border-slate-800/50 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-slate-800/50 hover:border-indigo-500/30 transition-all group">
+src/publishing/MediaLibrary.tsx:199:                   <div key={asset.id} className="group flex flex-col gap-3">
+src/agency/ClientManager.tsx:26:            <div key={client.id} className="bg-slate-900 border border-slate-800 rounded-[28px] p-6 group hover:border-emerald-500/50 transition-colors">
+src/agency/BillingView.tsx:57:           <div key={plan.id} className={cn(
+src/agency/BillingView.tsx:82:                 <div key={i} className="flex items-center gap-3 text-sm text-slate-300 font-medium">
+src/agency/AgencyView.tsx:29:              key={tab.id}
+src/components/ProactiveSuggestionBar.tsx:24:                <button key={s.id} onClick={s.action} className="text-sm font-bold text-white hover:text-indigo-300">
+src/components/ShareModal.tsx:199:                            <div key={i} className="flex-1 rounded-sm" style={{ backgroundColor: col }} />
+src/components/ShareModal.tsx:250:                        key={idx}
+src/dashboard/MainDashboard.tsx:226:                    <div key={event.id} className="bg-slate-950/50 border border-slate-800/60 p-4 rounded-2xl flex items-center gap-4 hover:bg-slate-900 transition-colors animate-in fade-in slide-in-from-right-2">
+src/dashboard/MainDashboard.tsx:347:                      <div key={i} className="w-4 bg-indigo-500/20 rounded-t-sm relative transition-all duration-500" style={{ height: `${h}%` }}>
+src/ChannelView.tsx:335:              key={range.value}
+src/ChannelView.tsx:499:                    key={post.id}
+src/ChannelView.tsx:582:                        key={video.id}
+src/ChannelView.tsx:658:                    key={f}
+src/ChannelView.tsx:678:                    key={video.id}
+src/ChannelView.tsx:759:                    key={i}
+src/ChannelView.tsx:772:                    key={v.id}
+src/notifications/NotificationCenter.tsx:103:                        key={n.id} 
+src/campaigns/CampaignOS.tsx:154:                 <div key={camp.id} className="bg-slate-900/40 border border-slate-800 p-6 rounded-3xl hover:bg-slate-900 transition-all group">
+src/campaigns/CampaignOS.tsx:176:                            <div key={p} className="w-8 h-8 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center text-[10px] font-black text-slate-400">{p}</div>
+src/campaigns/CampaignOS.tsx:218:                      <div key={insight.id} className="flex flex-col gap-1 border-b border-slate-800 pb-3 last:border-0 last:pb-0">
+src/campaigns/CampaignOS.tsx:368:            <div key={day} className="bg-slate-900/60 p-4 border-r border-b border-slate-800 text-center font-black text-[10px] text-slate-500 uppercase tracking-widest">{day}</div>
+src/campaigns/CampaignOS.tsx:373:              <div key={i} className={cn("min-h-[160px] p-3 bg-slate-950/20 border-r border-b border-slate-800 hover:bg-slate-900/40 transition-colors group", d <= 0 || d > 31 ? 'opacity-20 pointer-events-none' : '', isToday && 'bg-indigo-500/5')}>
+src/campaigns/CampaignOS.tsx:384:                       <div key={c.id} className="bg-indigo-500/20 border border-indigo-500/30 p-2 rounded-xl animate-in fade-in zoom-in-95">
+src/campaigns/CampaignOS.tsx:395:                       <div key={t.id} className="bg-emerald-500/10 border border-emerald-500/20 p-2 rounded-xl group-hover:bg-emerald-500/20 transition-colors">
+src/campaigns/CampaignOS.tsx:416:                <div key={trend.id} className="bg-slate-950/40 border border-slate-800 p-5 rounded-2xl flex flex-col gap-2 hover:border-indigo-500/30 transition-all">
+src/campaigns/CampaignOS.tsx:436:                      <div key={i} className="flex-1 bg-emerald-500/20 rounded-t-lg relative group transition-all" style={{ height: `${h}%` }}>
+src/App.tsx:318:                <div key={section.id} className="flex flex-col">
+src/App.tsx:334:                          key={item.id}
+src/App.tsx:454:                 key={i} 
+src/App.tsx:492:                       key={b.id}
+src/App.tsx:528:                               key={idx} 

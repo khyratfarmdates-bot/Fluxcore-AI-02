@@ -1,0 +1,88 @@
+{
+  "entities": {
+    "chat_sessions": {
+      "title": "Chat Sessions",
+      "description": "Groups of AI interactions within a specific session.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "brandId": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "lastMessage": { "type": "string" },
+        "lastMessageRole": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["brandId", "userId", "updatedAt", "createdAt"]
+    },
+    "ai_interactions": {
+      "title": "AI Interactions",
+      "description": "Individual messages within a chat session.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sessionId": { "type": "string" },
+        "brandId": { "type": "string" },
+        "userId": { "type": "string" },
+        "agentRole": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "assistant"] },
+        "userMessage": { "type": "string" },
+        "aiResponse": { "type": "string" },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "images": { "type": "array" },
+        "plan": { "type": "array" },
+        "suggestions": { "type": "array" }
+      },
+      "required": ["brandId", "userId", "timestamp"]
+    },
+    "brands": {
+      "title": "Brands",
+      "description": "Information about a user's brand identity and settings.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "seoUrl": { "type": "string" },
+        "seoAutomationEnabled": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name"]
+    }
+  },
+  "firestore": {
+    "/chat_sessions/{sessionId}": {
+      "schema": "chat_sessions",
+      "description": "Collection of chat session groups."
+    },
+    "/chat_sessions/{sessionId}/messages/{messageId}": {
+      "schema": "ai_interactions",
+      "description": "Collection of messages within a session."
+    },
+    "/ai_interactions/{interactionId}": {
+      "schema": "ai_interactions",
+      "description": "Legacy flat log collection."
+    },
+    "/brands/{brandId}": {
+      "schema": "brands",
+      "description": "Collection of brand documents."
+    },
+    "/integrations/{integrationId}": {
+      "description": "Connected third-party accounts."
+    },
+    "/integration_logs/{logId}": {
+      "description": "Logs of integration actions."
+    },
+    "/oauth_states/{stateId}": {
+      "description": "Temporary states for OAuth flows."
+    },
+    "/user_profiles/{profileId}": {
+      "schema": "brands",
+      "description": "User experience and onboarding profiles."
+    }
+  }
+}

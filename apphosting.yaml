@@ -1,0 +1,11 @@
+kind: "AppStack"
+schemaVersion: "v1"
+
+runConfig:
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  - variable: "APP_BASE_URL"
+    value: "https://automatposting--automatic-posting-58b3e.us-east4.hosted.app"

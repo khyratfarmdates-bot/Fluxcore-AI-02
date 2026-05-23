@@ -1,0 +1,35 @@
+src/media/tabs/ImageGeneration.tsx:      await addDoc(collection(db, 'generations'), {
+src/media/components/GenerationQueue.tsx:      collection(db, "generations"),
+src/core/integrations/IntegrationsManager.ts:        collection(db, "integrations"), 
+src/core/infrastructure/DiagnosticsService.ts:        const q = query(collection(db, "brands"), where("userId", "==", auth.currentUser.uid), limit(1));
+src/core/infrastructure/DiagnosticsService.ts:      const q = query(collection(db, "brands"), where("id", "==", workspaceId), limit(1));
+src/services/team.ts:      collection(db, 'team_members'),
+src/services/base.ts:      const docRef = await addDoc(collection(db, this.collectionName), {
+src/services/base.ts:      collection(db, this.collectionName),
+src/ChannelsListView.tsx:    const q = query(collection(db, "users", user.uid, "integrations"));
+src/automation/ActivityLogs.tsx:    const q = query(collection(db, 'automation_logs'), where('brandId', '==', activeBrand.id), orderBy('timestamp', 'desc'), limit(50));
+src/publishing/ApprovalWorkflow.tsx:      collection(db, 'publishing_queue'), 
+src/publishing/CalendarView.tsx:      collection(db, 'publishing_queue'), 
+src/publishing/MediaLibrary.tsx:      collection(db, "media_assets"),
+src/contexts/WorkspaceContext.tsx:    const q = query(collection(db, 'brands'), where('userId', '==', user.uid));
+src/contexts/WorkspaceContext.tsx:      const docRef = await addDoc(collection(db, 'brands'), {
+src/persistence/NotificationSync.ts:      await addDoc(collection(db, 'notifications'), {
+src/persistence/NotificationSync.ts:      collection(db, 'notifications'),
+src/persistence/ExecutionTracker.ts:      const docRef = await addDoc(collection(db, 'autonomous_executions'), {
+src/persistence/ExecutionTracker.ts:      collection(db, 'autonomous_executions'),
+src/persistence/ActivityStream.ts:      await addDoc(collection(db, 'audit_logs'), {
+src/persistence/ActivityStream.ts:        collection(db, 'audit_logs'), 
+src/persistence/ActivityStream.ts:        collection(db, 'audit_logs'), 
+src/persistence/AILogger.ts:      const msgRef = await addDoc(collection(db, 'ai_interactions'), {
+src/persistence/AILogger.ts:    const sessionRef = await addDoc(collection(db, 'chat_sessions'), {
+src/persistence/AILogger.ts:      collection(db, 'chat_sessions'),
+src/persistence/AILogger.ts:      collection(db, 'ai_interactions'), 
+src/studio/HistoryView.tsx:          collection(db, "generations"),
+src/studio/StudioView.tsx:      await addDoc(collection(db, "generations"), {
+src/ChannelView.tsx:    const qInt = query(collection(db, "users", user.uid, "integrations"));
+src/ChannelView.tsx:      collection(db, "videos"),
+src/executive/ExecutiveEngine.ts:          admin.collection(db, 'ai_interactions'),
+src/executive/ToolRegistry.ts:      const q = query(collection(db, "brands"), where("id", "==", args.brandId));
+src/dashboard/MainDashboard.tsx:        const genRef = collection(db, "generations");
+src/analytics/DashboardTab.tsx:      collection(db, 'generations'), 
+src/analytics/DashboardTab.tsx:      collection(db, 'publishing_queue'), 

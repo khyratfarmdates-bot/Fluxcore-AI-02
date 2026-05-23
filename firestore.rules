@@ -1,0 +1,240 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- GLOBAL HELPERS ---
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(data) { 
+      return isSignedIn() && (
+        data == null ||
+        (data != null && data.userId == request.auth.uid) || 
+        (data != null && data.brandId != null && exists(/databases/$(database)/documents/brands/$(data.brandId)) && get(/databases/$(database)/documents/brands/$(data.brandId)).data.userId == request.auth.uid)
+      ); 
+    }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource == null ? null : resource.data; }
+    
+    // --- VALIDATION HELPERS ---
+    function isValidBrand(data) {
+      return data.userId == request.auth.uid &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 100;
+    }
+    
+    function isValidPublishingTask(data) {
+      return data.userId == request.auth.uid &&
+             data.brandId is string &&
+             data.content is string && data.content.size() <= 10000 &&
+             data.status in ['queued', 'scheduled', 'publishing', 'published', 'failed'];
+    }
+
+    function isValidNotification(data) {
+      return data.userId == request.auth.uid &&
+             data.title is string && data.message is string &&
+             data.read is bool;
+    }
+
+    // --- RULES ---
+    
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /brands/{brandId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidBrand(incoming()) && isValidId(brandId);
+      allow update: if isOwner(existing()) && isValidBrand(incoming()) && 
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'industry', 'personality', 'writingStyle', 'preferredWords', 'bannedWords', 'preferredCta', 'targetAudience', 'language', 'slogans', 'colors', 'logo', 'seoUrl', 'seoAutomationEnabled', 'contactEmail', 'contactPhone', 'customTones', 'usageStats', 'updatedAt']);
+      allow delete: if isOwner(existing());
+    }
+
+    match /publishing_queue/{taskId} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn() && isValidPublishingTask(incoming()) && isValidId(taskId);
+      allow update: if isOwner(existing()) && (
+        (existing().status != 'published') && // Lock if published
+        isValidPublishingTask(incoming()) &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['content', 'platform', 'status', 'scheduledTime', 'error', 'updatedAt', 'publishedAt'])
+      );
+      allow delete: if isOwner(existing()) && (existing().status != 'published');
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing()) && incoming().diff(existing()).affectedKeys().hasOnly(['read', 'updatedAt']);
+      allow delete: if isOwner(existing());
+    }
+
+    match /analytics/{recordId} {
+      allow read: if isSignedIn() && (existing().userId == request.auth.uid || 
+                   get(/databases/$(database)/documents/brands/$(existing().brandId)).data.userId == request.auth.uid);
+      allow write: if false; 
+    }
+
+    match /_system_health/{docId} {
+       allow read: if isSignedIn();
+    }
+
+    match /audit_logs/{logId} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if false; // Immutable logs
+    }
+
+    match /billing/{billingId} {
+      allow read: if isOwner(existing());
+      allow write: if false; // Read-only for users (managed via server)
+    }
+
+    match /team_members/{memberId} {
+        allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || 
+                     get(/databases/$(database)/documents/team_members/$(memberId)).data.userId == request.auth.uid);
+        allow write: if false; // Admin UI will handle this
+    }
+
+    match /media_assets/{assetId} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidId(assetId);
+      allow update: if false; // Assets are usually final
+      allow delete: if isOwner(existing());
+    }
+
+    match /ai_interactions/{interactionId} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if false;
+      allow delete: if isOwner(existing());
+    }
+
+    match /integrations/{integrationId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || !('userId' in resource.data) || isOwner(resource.data));
+      allow create: if isSignedIn(); 
+      allow update: if isOwner(existing());
+      allow delete: if isOwner(existing());
+    }
+
+    match /integration_logs/{logId} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn();
+    }
+
+    match /user_profiles/{profileId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && incoming().userId == request.auth.uid && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /generations/{genId} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing());
+      allow delete: if isOwner(existing());
+    }
+
+    match /campaigns/{campaignId} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing());
+      allow delete: if isOwner(existing());
+    }
+
+    match /strategic_insights/{insightId} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if false;
+      allow delete: if isOwner(existing());
+    }
+
+    match /workflows/{workflowId} {
+       allow read: if isOwner(existing());
+       allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+       allow update: if isOwner(existing());
+       allow delete: if isOwner(existing());
+    }
+
+    match /automation_logs/{logId} {
+       allow read: if isOwner(existing());
+       allow create: if isSignedIn();
+    }
+
+    match /knowledge_entities/{entityId} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing());
+    }
+
+    match /knowledge_relationships/{relId} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing());
+    }
+
+    match /user_behavior_logs/{docId} {
+       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+       allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /oauth_states/{stateId} {
+       allow read, write: if isSignedIn();
+    }
+
+    match /users/{userId}/integrations/{integrationId} {
+       allow read, write: if isSignedIn() && userId == request.auth.uid;
+    }
+    
+    match /chat_sessions/{sessionId} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing());
+      allow delete: if isOwner(existing());
+    }
+    
+    match /autonomous_executions/{execId} {
+      allow read: if isOwner(existing()) || true; // In production tie to workspace roles
+      allow create, update: if isSignedIn();
+    }
+
+    match /agent_tasks/{taskId} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing());
+      allow delete: if isOwner(existing());
+    }
+
+    match /videos/{videoId} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing());
+      allow delete: if isOwner(existing());
+    }
+
+    match /activities/{activityId} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn();
+      allow update: if isOwner(existing());
+      allow delete: if isOwner(existing());
+    }
+
+    match /ai_memory/{memoryId} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing());
+      allow delete: if isOwner(existing());
+    }
+
+    match /social_publishing_tasks/{id} {
+      allow read: if isOwner(existing());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing());
+      allow delete: if isOwner(existing());
+    }
+
+    match /intelligence/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+  }
+}
