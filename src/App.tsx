@@ -24,7 +24,7 @@ import { ExecutiveChatView } from "./executive/ExecutiveChatView";
 import { DevConsoleView } from "./core/DevConsoleView";
 import { DiagnosticsConsole } from "./runtime/DiagnosticsConsole";
 import { SEOStudio } from "./marketing/SEOStudio";
-import { LayoutDashboard, PenTool, Sparkles, Workflow, BarChart3, Settings, Search, Command, Send, Users, Wand2, Cpu, CreditCard, ShieldAlert, Blocks, Terminal, Flag, Shield, SearchIcon, Tv, ChevronDown, Briefcase, TrendingUp } from "lucide-react";
+import { LayoutDashboard, PenTool, Sparkles, Workflow, BarChart3, Settings, Send, Users, Wand2, Cpu, CreditCard, ShieldAlert, Blocks, Terminal, Flag, Shield, SearchIcon, Tv, Briefcase, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { auth, logout } from "./lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -50,6 +50,9 @@ import { AutomationView } from "./automation/AutomationView";
 
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { NetworkStatusIndicator } from "./components/NetworkStatusIndicator";
+import { SystemDiagnosticsPanel } from "./components/SystemDiagnosticsPanel";
+import { AppSidebar } from "./components/AppSidebar";
+import { PageTransition } from "./components/PageTransition";
 
 export default function App() {
   return (
@@ -202,38 +205,7 @@ function AppContent() {
     return <OnboardingView onComplete={() => setNeedsOnboarding(false)} />;
   }
 
-  const navSections = [
-    {
-      id: "workspace",
-      title: "تطوير الأعمال",
-      items: [
-        { id: "dashboard", label: "الرئيسية", icon: <LayoutDashboard size={16} /> },
-        { id: "brand", label: "هوية العلامة", icon: <Sparkles size={16} /> },
-        { id: "analytics", label: "الأداء والتحليلات", icon: <BarChart3 size={16} /> },
-        { id: "campaigns", label: "الحملات الإعلانية", icon: <Flag size={16} /> },
-      ]
-    },
-    {
-      id: "production",
-      title: "صناعة المحتوى",
-      items: [
-        { id: "studio", label: "الاستوديو الذكي", icon: <PenTool size={16} /> },
-        { id: "media", label: "مختبر الوسائط", icon: <Wand2 size={16} /> },
-        { id: "seo", label: "تحسين محركات البحث", icon: <SearchIcon size={16} /> },
-        { id: "publishing", label: "الجدولة والنشر", icon: <Send size={16} /> },
-      ]
-    },
-    {
-      id: "system",
-      title: "الإدارة والنظام",
-      items: [
-        { id: "automation", label: "الأتمتة والمهام", icon: <Workflow size={16} /> },
-        { id: "integrations", label: "قنوات الربط", icon: <Blocks size={16} /> },
-        { id: "agency", label: "فريق العمل", icon: <Users size={16} /> },
-        { id: "settings", label: "الإعدادات", icon: <Settings size={16} /> },
-      ]
-    }
-  ];
+  // navSections moved to AppSidebar component
 
   const handleLogout = async () => {
     try {
@@ -254,100 +226,47 @@ function AppContent() {
       >
         <CommandCenter isOpen={cmdOpen} onClose={() => setCmdOpen(false)} onNavigate={setActiveModule} />
         <AIAssistant />
+        <SystemDiagnosticsPanel />
 
-        {/* Sidebar */}
-
-        <aside className="w-64 h-screen bg-slate-950 border-l border-slate-800/50 flex flex-col shrink-0 p-4">
-          <div className="flex items-center justify-between p-2 mb-8">
-            <div className="flex items-center gap-3">
-              <Logo size={32} />
-              <div className="flex flex-col">
-                <h1 className="font-black text-lg tracking-tight text-white">
-                  Fluxcore <span className="text-indigo-400">AI 02</span>
-                </h1>
-              </div>
-            </div>
-            <NotificationCenter />
-          </div>
-          
-          <nav className="flex flex-col gap-5 flex-1 overflow-y-auto custom-scrollbar">
-            {navSections.map((section, sIdx) => (
-              <div key={`section-${section.id}-${sIdx}`} className="flex flex-col">
-                <div className="px-4 pb-2 text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                   {section.title}
-                </div>
-                
-                <div className="flex flex-col gap-0.5 px-2">
-                  {section.items.map((item, iIdx) => (
-                    <button
-                      key={`item-${item.id}-${iIdx}`}
-                      onClick={() => setActiveModule(item.id as any)}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 group ${
-                        activeModule === item.id 
-                          ? "bg-slate-800/80 text-white shadow-sm border border-slate-700/50" 
-                          : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
-                      }`}
-                    >
-                      <span className={activeModule === item.id ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-300"}>
-                        {item.icon}
-                      </span>
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </nav>
-          
-          <div className="mt-auto px-2 py-4 border-t border-slate-800/50 flex flex-col gap-2">
-            <NetworkStatusIndicator />
-
-            <button onClick={() => setCmdOpen(true)} className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-900/50 hover:bg-slate-800/80 border border-slate-800 text-slate-400 transition-colors">
-              <div className="flex gap-2 items-center text-sm font-bold flex-1">
-                <Search size={14} /> <span className="flex-1 text-right">بحث بالأوامر</span>
-              </div>
-              <div className="flex gap-1 text-[10px] font-mono opacity-60">
-                <span className="bg-slate-800 px-1 py-0.5 rounded">⌘</span>
-                <span className="bg-slate-800 px-1 py-0.5 rounded">K</span>
-              </div>
-            </button>
-
-            <button onClick={handleLogout} className="w-full flex justify-between items-center p-2 hover:bg-rose-500/10 rounded-xl text-slate-500 hover:text-rose-400 transition-colors group">
-              <div className="flex items-center gap-2">
-                 <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`} alt="Avatar" className="w-8 h-8 rounded-full border border-slate-700" />
-                 <div className="text-right">
-                    <div className="text-xs font-bold text-slate-300 group-hover:text-rose-400">{user.displayName || "مستخدم"}</div>
-                    <div className="text-[10px]">تسجيل خروج</div>
-                 </div>
-              </div>
-            </button>
-          </div>
-        </aside>
+        {/* ── Sidebar ──────────────────────────── */}
+        <AppSidebar
+          activeModule={activeModule}
+          onNavigate={(m) => setActiveModule(m as any)}
+          onOpenCommand={() => setCmdOpen(true)}
+          user={user}
+          onLogout={handleLogout}
+        />
 
         {/* Main Workspace */}
         <main className="flex-1 h-screen overflow-hidden flex flex-col bg-slate-950 relative">
           <WorkspaceStatusIndicator />
           <ProactiveSuggestionBar pagePath={activeModule} navigateTo={(m) => setActiveModule(m as any)} />
-          <div className="flex-1 overflow-y-auto">
-            {activeModule === "dashboard" && <MainDashboard onNavigate={(m) => setActiveModule(m as any)} />}
-            {activeModule === "core" && <AIOSCoreView />}
-            {activeModule === "studio" && <StudioView onNavigate={setActiveModule} />}
-            {activeModule === "media" && <MediaLabView />}
-            {activeModule === "campaigns" && <CampaignOS />}
-            {activeModule === "publishing" && <PublishingView />}
-            {activeModule === "brand" && <BrandIdentityView />}
-            {activeModule === "automation" && <AutomationView />}
-            {activeModule === "seo" && <SEOStudio />}
-            {activeModule === "integrations" && <IntegrationsHubView />}
-            {activeModule === "channels" && <div className="p-8 h-full bg-slate-950 overflow-y-auto"><ChannelsListView theme="dark" lang="ar" user={user} onNavigate={handleNavigate} /></div>}
-            {activeModule === "channel" && <div className="p-8 h-full bg-slate-950 overflow-y-auto"><ChannelView theme="dark" lang="ar" user={user} channelId={selectedChannelId} onNavigate={handleNavigate} /></div>}
-            {activeModule === "analytics" && <AnalyticsView />}
-            {activeModule === "agency" && <AgencyView />}
-            {activeModule === "billing" && <BillingDashboard />}
-            {activeModule === "admin" && <AdminDashboard />}
-            {activeModule === "dev" && <DevConsoleView />}
-            {activeModule === "runtime" && <div className="p-8 h-full bg-slate-950 overflow-y-auto"><div className="max-w-4xl mx-auto h-[800px]"><DiagnosticsConsole /></div></div>}
-            {activeModule === "settings" && <SettingsView />}
+          <div className="flex-1 overflow-hidden relative">
+            <AnimatePresence mode="wait">
+              <PageTransition moduleKey={activeModule}>
+                <div className="h-full overflow-y-auto custom-scrollbar">
+                  {activeModule === "dashboard"    && <MainDashboard onNavigate={(m) => setActiveModule(m as any)} />}
+                  {activeModule === "core"          && <AIOSCoreView />}
+                  {activeModule === "studio"        && <StudioView onNavigate={setActiveModule} />}
+                  {activeModule === "media"         && <MediaLabView />}
+                  {activeModule === "campaigns"     && <CampaignOS />}
+                  {activeModule === "publishing"    && <PublishingView />}
+                  {activeModule === "brand"         && <BrandIdentityView />}
+                  {activeModule === "automation"    && <AutomationView />}
+                  {activeModule === "seo"           && <SEOStudio />}
+                  {activeModule === "integrations"  && <IntegrationsHubView />}
+                  {activeModule === "channels"      && <div className="p-8 h-full bg-slate-950 overflow-y-auto"><ChannelsListView theme="dark" lang="ar" user={user} onNavigate={handleNavigate} /></div>}
+                  {activeModule === "channel"       && <div className="p-8 h-full bg-slate-950 overflow-y-auto"><ChannelView theme="dark" lang="ar" user={user} channelId={selectedChannelId} onNavigate={handleNavigate} /></div>}
+                  {activeModule === "analytics"     && <AnalyticsView />}
+                  {activeModule === "agency"        && <AgencyView />}
+                  {activeModule === "billing"       && <BillingDashboard />}
+                  {activeModule === "admin"         && <AdminDashboard />}
+                  {activeModule === "dev"           && <DevConsoleView />}
+                  {activeModule === "runtime"       && <div className="p-8 h-full bg-slate-950 overflow-y-auto"><div className="max-w-4xl mx-auto h-[800px]"><DiagnosticsConsole /></div></div>}
+                  {activeModule === "settings"      && <SettingsView />}
+                </div>
+              </PageTransition>
+            </AnimatePresence>
           </div>
         </main>
       </div>
