@@ -188,43 +188,64 @@ export function ExecutiveChatView() {
                   )}
 
                   {msg.options && msg.options.length > 0 && (
-                    <div className="grid grid-cols-2 gap-3 w-full mt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full mt-4">
                       {msg.options.map((opt) => (
-                        <button 
+                        <motion.button 
                           key={opt.id}
+                          whileHover={{ scale: 1.02, translateY: -2 }}
+                          whileTap={{ scale: 0.98 }}
                           onClick={() => {
                             if (opt.type === "choice") {
                               handleSend(opt.label);
                             } else if (opt.type === "action") {
-                              // If it's an action, we might want to trigger a specific tool or event
                               if (opt.value?.toolName) {
-                                // We can't easily execute tools from UI without going through engine
-                                // so let's send a technical message to the engine
                                 handleSend(`EXECUTE_TOOL: ${opt.value.toolName} ${safeStringify(opt.value.args || {})}`);
                               } else {
                                 handleSend(opt.label);
                               }
                             }
                           }}
-                          className="flex items-center justify-between p-4 bg-slate-950 border border-slate-800 rounded-2xl hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all text-sm font-bold group text-right"
+                          className={cn(
+                            "flex items-center justify-between p-4 rounded-2xl border transition-all text-sm font-bold group text-right shadow-lg backdrop-blur-md relative overflow-hidden",
+                            opt.type === 'action' 
+                              ? "bg-gradient-to-r from-indigo-950/80 to-slate-900 border-indigo-500/40 hover:border-indigo-400 hover:shadow-[0_0_20px_rgba(99,102,241,0.3)]" 
+                              : "bg-slate-950/90 border-slate-800 hover:border-indigo-500/50 hover:bg-slate-900"
+                          )}
                         >
-                          <ChevronDown size={14} className={cn("text-slate-600", opt.type === 'action' ? "rotate-0 text-indigo-500" : "rotate-90")} />
-                          <span className="text-slate-300 group-hover:text-white">{opt.label}</span>
-                        </button>
+                          <div className="flex items-center gap-2">
+                            {opt.type === 'action' ? (
+                              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20 flex items-center gap-1">
+                                <Zap size={10} className="fill-current animate-pulse" /> تنفيذ فوري
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded-md border border-slate-700/50">
+                                🎯 قرار استراتيجي
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-200 group-hover:text-white transition-colors">{opt.label}</span>
+                            <ArrowUpRight size={16} className="text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-[-2px] group-hover:translate-y-[-2px] transition-all" />
+                          </div>
+                        </motion.button>
                       ))}
                     </div>
                   )}
 
                   {msg.suggestions && msg.suggestions.length > 0 && (
-                     <div className="flex gap-2 flex-wrap mt-2">
+                     <div className="flex gap-2 flex-wrap mt-3 pt-3 border-t border-white/5">
+                       <span className="w-full text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">⚡ اقتراحات العمل التفاعلي السريع:</span>
                        {msg.suggestions.map((s, i) => (
-                         <button 
+                         <motion.button 
                            key={i} 
+                           whileHover={{ scale: 1.05 }}
+                           whileTap={{ scale: 0.95 }}
                            onClick={() => handleSend(s)}
-                           className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-full text-xs font-bold hover:border-indigo-500/50 hover:bg-indigo-500/10 hover:text-white transition-all"
+                           className="px-3.5 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-xs font-bold text-indigo-300 hover:border-indigo-500 hover:bg-indigo-500 hover:text-white hover:shadow-[0_0_15px_rgba(99,102,241,0.4)] transition-all flex items-center gap-1.5"
                          >
+                           <Sparkles size={12} className="text-indigo-400 group-hover:text-white" />
                            {s}
-                         </button>
+                         </motion.button>
                        ))}
                      </div>
                   )}
