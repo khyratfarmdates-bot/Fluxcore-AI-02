@@ -28,6 +28,22 @@ export interface BrandIdentity {
   visualCharacterProfile?: string;
   selectedVoice?: string;
   customTones?: { id: string, name: string, prompt: string }[];
+  commercialRegister?: string;
+  taxId?: string;
+  businessCountry?: string;
+  googleAdsCustomerId?: string;
+  brandIntelligence?: {
+    seoHealthScore?: number;
+    copyQualityScore?: number;
+    visualTrustScore?: number;
+    googleAdsPolicyScore?: number;
+    scrapedImages?: string[];
+    extractedLogo?: string;
+    adAngles?: { title: string; desc: string; targetHook: string }[];
+    buyerAvatar?: { demographics: string; painPoints: string; buyTriggers: string };
+    missingRequirements?: { title: string; desc: string; severity: 'critical' | 'warning' | 'info'; actionKey: string }[];
+    lastScannedAt?: string;
+  };
   usageStats?: { tokensUsed: number, imageGenerations: number, modelsUsed: Record<string, number> };
   createdAt: any;
   updatedAt: any;
