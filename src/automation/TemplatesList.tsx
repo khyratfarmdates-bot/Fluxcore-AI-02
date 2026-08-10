@@ -1,6 +1,6 @@
 import React from 'react';
 import { Workflow } from './types';
-import { Sparkles, CalendarClock, TrendingUp, MonitorPlay, Presentation } from 'lucide-react';
+import { Sparkles, CalendarClock, TrendingUp, MonitorPlay, Presentation, Search, Database } from 'lucide-react';
 
 const templates: { icon: any, color: string, template: Partial<Workflow> }[] = [
   {
@@ -52,6 +52,45 @@ const templates: { icon: any, color: string, template: Partial<Workflow> }[] = [
         { id: '1', type: 'trigger', actionOrTriggerType: 'ManualIdea', title: 'إدخال فكرة الحملة', config: {} },
         { id: '2', type: 'action', actionOrTriggerType: 'GenerateContent', title: 'توليد أفكار المحتوى', config: {} },
         { id: '3', type: 'action', actionOrTriggerType: 'GenerateScript', title: 'كتابة الإعلانات', config: {} }
+      ]
+    }
+  },
+  {
+    icon: <Search size={24} />,
+    color: 'emerald',
+    template: {
+      title: 'SEO Audit & Google Sheets',
+      description: 'يقوم بمراقبة سيو متجرك، وتحديث الكلمات المفتاحية الاستخباراتية وتنزيلها بـ Google Sheets تلقائياً.',
+      steps: [
+        { id: '1', type: 'trigger', actionOrTriggerType: 'Schedule', title: 'تشغيل أسبوعي تلقائي', config: {} },
+        { id: '2', type: 'action', actionOrTriggerType: 'AnalyzeContent', title: 'فحص SEO شامل', config: {} },
+        { id: '3', type: 'action', actionOrTriggerType: 'SaveDraft', title: 'حفظ التقرير في Google Sheets', config: {} }
+      ]
+    }
+  },
+  {
+    icon: <Database size={24} />,
+    color: 'blue',
+    template: {
+      title: 'Shopify Sales Alert & Telegram',
+      description: 'تتبع صفقات ومبيعات متجر Shopify، وإرسال تنبيه Telegram فوري للبراند وصياغة تهنئة مميزة.',
+      steps: [
+        { id: '1', type: 'trigger', actionOrTriggerType: 'NewContent', title: 'عند حدوث بيعة جديدة', config: {} },
+        { id: '2', type: 'action', actionOrTriggerType: 'GenerateCaption', title: 'توليد رسالة تهنئة للعميل', config: {} },
+        { id: '3', type: 'action', actionOrTriggerType: 'SendNotification', title: 'تنبيه Telegram وتحديث السجلات', config: {} }
+      ]
+    }
+  },
+  {
+    icon: <Sparkles size={24} />,
+    color: 'pink',
+    template: {
+      title: 'AI Brand Character Media Auto-Gen',
+      description: 'أتمتة صناعة وتوليد الصور الإعلانية الترويجية والفيديوهات المجدولة استناداً إلى ملف السمات البصرية والأفاتار الموحد لعلامتك التجارية لضمان اتساق مذهل للشخصيات وجودة فائقة.',
+      steps: [
+        { id: '1', type: 'trigger', actionOrTriggerType: 'Schedule', title: 'تشغيل مجدول يومي تلقائي', config: {} },
+        { id: '2', type: 'action', actionOrTriggerType: 'AnalyzeContent', title: 'استدعاء السمات البصرية للأفاتار', config: {} },
+        { id: '3', type: 'action', actionOrTriggerType: 'GenerateContent', title: 'توليد الصور الإعلانية وحفظها كأصل في المكتبة', config: {} }
       ]
     }
   }

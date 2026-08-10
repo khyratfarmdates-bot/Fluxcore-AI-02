@@ -175,21 +175,43 @@ export function AIAssistant() {
   }, [guideMessage]);
 
   useEffect(() => {
-    if (isGuiding && guideTargetSelector) {
-      const element = document.querySelector(guideTargetSelector) || 
-                      document.querySelector(`[data-companion-id="${guideTargetSelector.replace('#', '')}"]`);
-      if (element) {
-        setTargetRect(element.getBoundingClientRect());
+    let intervalId: any = null;
+
+    const updateRect = () => {
+      if (isGuiding && guideTargetSelector) {
+        const element = document.querySelector(guideTargetSelector) || 
+                        document.querySelector(`[data-companion-id="${guideTargetSelector.replace('#', '')}"]`);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          // Only update state if position values actually changed to prevent loop rerenders
+          setTargetRect(prev => {
+            if (!prev || prev.left !== rect.left || prev.top !== rect.top || prev.width !== rect.width || prev.height !== rect.height) {
+              return rect;
+            }
+            return prev;
+          });
+        }
+      } else {
+        setTargetRect(null);
       }
-    } else {
-      setTargetRect(null);
+    };
+
+    updateRect(); // Instant measurement
+
+    if (isGuiding && guideTargetSelector) {
+      // Periodic check to capture navigation page loads or dynamic DOM movements smoothly
+      intervalId = setInterval(updateRect, 150);
     }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [isGuiding, guideTargetSelector]);
 
   const prevModuleRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!currentPageModule || isOpen) return;
+    if (!currentPageModule || isOpen || isDemonstrating) return;
     
     if (prevModuleRef.current === currentPageModule) return;
     prevModuleRef.current = currentPageModule;
@@ -206,12 +228,13 @@ export function AIAssistant() {
     useCompanionStore.getState().setGuide(null, null);
     
     const timer = setTimeout(() => {
-      useCompanionStore.getState().setGuide('#page-context-guide', speech);
-      useCompanionStore.setState({ isAmbientSuggesting: true });
+      // Automatic greetings are silenced to keep the platform noise-free. Tours and prompts remain fully manual and direct.
+      useCompanionStore.getState().setGuide(null, null);
+      useCompanionStore.setState({ isAmbientSuggesting: false });
     }, 1200);
 
     return () => clearTimeout(timer);
-  }, [currentPageModule, isOpen]);
+  }, [currentPageModule, isOpen, isDemonstrating]);
 
   const handleTriggerPageAction = (module: string) => {
     const prompt = getPageActionPrompt(module);
@@ -445,8 +468,8 @@ export function AIAssistant() {
   // True Locomotion motion values
   const motionX = useMotionValue(rawTargetLeft);
   const motionY = useMotionValue(rawTargetTop);
-  const springX = useSpring(motionX, { stiffness: 50, damping: 35, restDelta: 1, restSpeed: 1 });
-  const springY = useSpring(motionY, { stiffness: 50, damping: 35, restDelta: 1, restSpeed: 1 });
+  const springX = useSpring(motionX, { stiffness: 140, damping: 22, restDelta: 0.1, restSpeed: 0.1 });
+  const springY = useSpring(motionY, { stiffness: 140, damping: 22, restDelta: 0.1, restSpeed: 0.1 });
 
   useEffect(() => {
     if (!isOpen) {

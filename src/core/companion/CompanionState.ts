@@ -37,6 +37,11 @@ interface CompanionStore {
   isAmbientSuggesting: boolean;
   currentPageModule: string;
 
+  // Active Brand Syncing
+  activeBrandVoice?: string;
+  activeBrandCharacterPhoto?: string;
+  activeBrandCharacterProfile?: string;
+
   toggleVisibility: () => void;
   setState: (state: CompanionState) => void;
   setEmotion: (emotion: EmotionState) => void;
@@ -50,6 +55,7 @@ interface CompanionStore {
   triggerAmbientSuggestion: (message: string, duration?: number) => void;
   recordInteraction: () => void;
   setCurrentPageModule: (module: string) => void;
+  setActiveBrandDetails: (voice?: string, photo?: string, profile?: string) => void;
 }
 
 export const useCompanionStore = create<CompanionStore>((set) => ({
@@ -115,4 +121,9 @@ export const useCompanionStore = create<CompanionStore>((set) => ({
   }),
   recordInteraction: () => set({ lastInteractionTime: Date.now() }),
   setCurrentPageModule: (module: string) => set({ currentPageModule: module }),
+  setActiveBrandDetails: (voice, photo, profile) => set({ 
+    activeBrandVoice: voice, 
+    activeBrandCharacterPhoto: photo, 
+    activeBrandCharacterProfile: profile 
+  }),
 }));

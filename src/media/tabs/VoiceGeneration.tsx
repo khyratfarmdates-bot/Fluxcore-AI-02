@@ -7,8 +7,9 @@ import { cn } from "../../lib/utils";
 import { toast } from "sonner";
 import { providerManager } from "../../core/providers/ProviderManager";
 import { useWorkspace } from "../../contexts/WorkspaceContext";
-import { db, auth } from "../../lib/firebase";
+import { db, auth, uploadBlobToStorage } from "../../lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { generateId } from "../../lib/ids";
 
 // Visual Dialects definition
 const DIALECT_OPTIONS = [
@@ -402,14 +403,26 @@ export function VoiceGeneration() {
               const base64Str = arrayBufferToBase64(arrayBuffer);
               const dataUrl = `data:${contentType};base64,${base64Str}`;
 
-              // Save to Firestore generations
+              // رفع الملف الصوتي إلى Firebase Storage مع الاحتفاظ بالـ Base64 كبديل احتياطي (Fallback)
+              let fileUrl = dataUrl;
               if (auth.currentUser && activeBrand) {
+                try {
+                  setProgressStep("جاري رفع التعليق الصوتي إلى التخزين السحابي...");
+                  const genId = generateId();
+                  const fileExtension = contentType.includes("mpeg") ? "mp3" : "wav";
+                  const storagePath = `brands/${activeBrand.id}/audio/${genId}.${fileExtension}`;
+                  const blob = new Blob([arrayBuffer], { type: contentType });
+                  fileUrl = await uploadBlobToStorage(blob, storagePath);
+                } catch (uploadErr) {
+                  console.error("[VOICE SYSTEM] Storage upload failed, falling back to base64 URL:", uploadErr);
+                }
+
                 try {
                   await addDoc(collection(db, "generations"), {
                     brandId: activeBrand.id,
                     userId: auth.currentUser.uid,
                     contentType: 'voice',
-                    result: dataUrl,
+                    result: fileUrl,
                     goal: text, 
                     params: {
                       prompt: text,

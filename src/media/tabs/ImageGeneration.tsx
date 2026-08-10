@@ -29,7 +29,7 @@ import {
   deleteDoc, 
   doc 
 } from 'firebase/firestore';
-import { db, auth } from '../../lib/firebase';
+import { db, auth, uploadBase64ToStorage } from '../../lib/firebase';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
 import { toast } from '../../lib/soundToast';
 
@@ -275,12 +275,21 @@ export function ImageGeneration() {
 
       setResult(imageUrl);
       
-      // ضغط وتصغير حجم الصورة للـ Base64 لضمان عدم تجاوز حد المستند بـ Firebase (1MB)
+      // رفع الصورة المولدة إلى Firebase Storage مع الاحتفاظ بضغط الصور محلياً كبديل احتياطي (Fallback)
       let firestoreImageUrl = imageUrl;
+      const genId = generateId();
+      const storagePath = `brands/${activeBrand.id}/images/${genId}.jpg`;
+      
       try {
-        firestoreImageUrl = await compressImageForFirestore(imageUrl);
-      } catch (compressErr) {
-        console.warn("[IMAGE SYSTEM] Failed to compress image for Firestore fallback:", compressErr);
+        setProgressStep("جاري رفع الصورة إلى التخزين السحابي الآمن...");
+        firestoreImageUrl = await uploadBase64ToStorage(imageUrl, storagePath);
+      } catch (uploadErr: any) {
+        console.error("[IMAGE SYSTEM] Firebase Storage upload failed, falling back to compressed local base64:", uploadErr);
+        try {
+          firestoreImageUrl = await compressImageForFirestore(imageUrl);
+        } catch (compressErr) {
+          console.warn("[IMAGE SYSTEM] Failed to compress image for Firestore fallback:", compressErr);
+        }
       }
       
       await addDoc(collection(db, 'generations'), {

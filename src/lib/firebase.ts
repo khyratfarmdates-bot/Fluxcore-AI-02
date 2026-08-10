@@ -10,6 +10,7 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { getFirestore, initializeFirestore, doc, getDocFromServer } from "firebase/firestore";
+import { getStorage, ref, uploadString, uploadBytes, getDownloadURL } from "firebase/storage";
 import firebaseConfigImport from "../../firebase-applet-config.json";
 import { toast } from './soundToast';
 
@@ -32,6 +33,34 @@ const getDb = () => {
 };
 export const db = getDb();
 export const auth = getAuth(app);
+export const storage = getStorage(app);
+
+// Helper to upload base64 images to Firebase Storage
+export const uploadBase64ToStorage = async (base64Data: string, filePath: string): Promise<string> => {
+  const storageRef = ref(storage, filePath);
+  let dataToUpload = base64Data;
+  let metadata: any = {};
+  if (base64Data.startsWith('data:')) {
+    const parts = base64Data.split(',');
+    if (parts.length > 1) {
+      dataToUpload = parts[1];
+    }
+    const mimeMatch = base64Data.match(/data:([^;]+);/);
+    if (mimeMatch) {
+      metadata.contentType = mimeMatch[1];
+    }
+  }
+  await uploadString(storageRef, dataToUpload, 'base64', metadata);
+  return await getDownloadURL(storageRef);
+};
+
+// Helper to upload Blobs (like audio) to Firebase Storage
+export const uploadBlobToStorage = async (blob: Blob, filePath: string): Promise<string> => {
+  const storageRef = ref(storage, filePath);
+  await uploadBytes(storageRef, blob, { contentType: blob.type });
+  return await getDownloadURL(storageRef);
+};
+
 export const googleProvider = new GoogleAuthProvider();
 export const facebookProvider = new FacebookAuthProvider();
 export const appleProvider = new OAuthProvider("apple.com");

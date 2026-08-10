@@ -4,6 +4,7 @@ export interface VoiceOptions {
   emotion?: 'neutral' | 'happy' | 'excited' | 'serious' | 'sad' | 'whisper';
   speed?: number;
   pitch?: number;
+  voice?: string;
 }
 
 export class VoiceEngine {
@@ -12,6 +13,7 @@ export class VoiceEngine {
   private audioContext: AudioContext | null = null;
   private isSpeaking: boolean = false;
   private currentAudio: HTMLAudioElement | null = null;
+  private activeResolve: (() => void) | null = null;
 
   private constructor() {}
 
@@ -28,7 +30,7 @@ export class VoiceEngine {
     }
     
     this.isSpeaking = true;
-    console.log(`[VoiceEngine] Speaking via ${this.currentProvider} with emotion ${options?.emotion || 'neutral'}: "${text}"`);
+    console.log(`[VoiceEngine] Speaking via ${this.currentProvider} with voice ${options?.voice || 'default'} and emotion ${options?.emotion || 'neutral'}: "${text}"`);
     
     try {
       const savedConfig = localStorage.getItem('fluxcore_ai_config');
@@ -40,7 +42,7 @@ export class VoiceEngine {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text,
-          voice: options?.emotion === 'excited' ? 'nova' : 'alloy',
+          voice: options?.voice || (options?.emotion === 'excited' ? 'nova' : 'alloy'),
           provider: apiProvider,
           apiKey: parsedConfig?.apiKey || ""
         })
@@ -56,31 +58,43 @@ export class VoiceEngine {
       this.currentAudio = audio;
 
       return new Promise<void>((resolve) => {
+        this.activeResolve = () => {
+          this.activeResolve = null;
+          resolve();
+        };
+
         audio.onended = () => {
           this.isSpeaking = false;
           URL.revokeObjectURL(audioUrl);
-          resolve();
+          if (this.activeResolve) this.activeResolve();
         };
         audio.onerror = () => {
           this.isSpeaking = false;
           URL.revokeObjectURL(audioUrl);
-          resolve(); // Resolve to avoid breaking flows
+          if (this.activeResolve) this.activeResolve();
         };
         audio.play().catch((err) => {
           console.warn("[VoiceEngine] Playback failed:", err);
           this.isSpeaking = false;
           URL.revokeObjectURL(audioUrl);
-          resolve();
+          if (this.activeResolve) this.activeResolve();
         });
       });
     } catch (err) {
       console.warn("[VoiceEngine] Failed to generate/play real voice, falling back to simulation:", err);
       // Stub: Simulate network delay and speech duration
       return new Promise((resolve) => {
-        const durationMs = Math.max(1000, text.length * 50); // Rough estimate
-        setTimeout(() => {
-          this.isSpeaking = false;
+        let timeoutId: any = null;
+        this.activeResolve = () => {
+          if (timeoutId) clearTimeout(timeoutId);
+          this.activeResolve = null;
           resolve();
+        };
+
+        const durationMs = Math.max(1000, text.length * 50); // Rough estimate
+        timeoutId = setTimeout(() => {
+          this.isSpeaking = false;
+          if (this.activeResolve) this.activeResolve();
         }, durationMs);
       });
     }
@@ -99,6 +113,11 @@ export class VoiceEngine {
     if (this.isSpeaking) {
       console.log('[VoiceEngine] Stopped speaking.');
       this.isSpeaking = false;
+    }
+    if (this.activeResolve) {
+      const resolve = this.activeResolve;
+      this.activeResolve = null;
+      resolve();
     }
   }
 

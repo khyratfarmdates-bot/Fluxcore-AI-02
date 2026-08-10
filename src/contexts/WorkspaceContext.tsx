@@ -24,6 +24,9 @@ export interface BrandIdentity {
   seoAutomationEnabled?: boolean;
   contactEmail?: string;
   contactPhone?: string;
+  characterPhoto?: string;
+  visualCharacterProfile?: string;
+  selectedVoice?: string;
   customTones?: { id: string, name: string, prompt: string }[];
   usageStats?: { tokensUsed: number, imageGenerations: number, modelsUsed: Record<string, number> };
   createdAt: any;
@@ -83,6 +86,19 @@ export function WorkspaceProvider({ children, user }: { children: React.ReactNod
   }, [user]); // Removed activeBrandId dependency
 
   const activeBrand = brands.find(b => b.id === activeBrandId) || null;
+
+  // Synchronize active brand details with companion store
+  useEffect(() => {
+    if (activeBrand) {
+      import('../core/companion/CompanionState').then(({ useCompanionStore }) => {
+        useCompanionStore.getState().setActiveBrandDetails(
+          activeBrand.selectedVoice,
+          activeBrand.characterPhoto,
+          activeBrand.visualCharacterProfile
+        );
+      }).catch(err => console.warn("Failed to sync active brand details with companion store:", err));
+    }
+  }, [activeBrand]);
 
   const createBrand = async (brandData: Partial<BrandIdentity>) => {
     if (!user) throw new Error("Must be logged in to create brand");

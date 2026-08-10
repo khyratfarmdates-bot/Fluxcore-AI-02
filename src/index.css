@@ -238,3 +238,65 @@
     transparent 100%
   );
 }
+
+/* ============================
+   Premium UI Enhancements
+   ============================ */
+:root {
+  --neon-border-indigo: rgba(99, 102, 241, 0.25);
+  --neon-border-rose: rgba(244, 63, 94, 0.25);
+  --neon-glow-indigo: 0 0 15px rgba(99, 102, 241, 0.25);
+  --neon-glow-rose: 0 0 15px rgba(244, 63, 94, 0.25);
+  --neon-glow-cyan: 0 0 15px rgba(6, 182, 212, 0.2);
+}
+
+/* Active Nav Glow */
+.glow-nav-active {
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.12), inset 0 0 8px rgba(99, 102, 241, 0.05);
+}
+
+/* Sub-item Glowing Line Indicator */
+.subitem-glow-line {
+  position: relative;
+}
+.subitem-glow-line::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 25%;
+  height: 50%;
+  width: 2px;
+  background: linear-gradient(180deg, #818cf8, #22d3ee);
+  border-radius: 99px;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+}
+
+/* Collapsed Tooltip Animate */
+@keyframes tooltip-pop {
+  0% { opacity: 0; transform: scale(0.9) translateX(8px); }
+  100% { opacity: 1; transform: scale(1) translateX(0); }
+}
+.animate-tooltip-pop {
+  animation: tooltip-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Brand Card Premium Hover */
+.brand-card-premium {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.35) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.brand-card-premium:hover {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+  border-color: rgba(99, 102, 241, 0.25);
+  box-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.5), 0 0 15px rgba(99, 102, 241, 0.05);
+}
+
+/* Glass Dropdown */
+.glass-dropdown-premium {
+  background: rgba(8, 10, 19, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.9), 0 0 30px rgba(99, 102, 241, 0.04);
+}

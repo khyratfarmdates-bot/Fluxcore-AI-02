@@ -3,7 +3,7 @@ import { Wifi, WifiOff, RefreshCw, Gauge, Server, ArrowDown, X, Zap } from 'luci
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 
-export function NetworkStatusIndicator() {
+export function NetworkStatusIndicator(): any {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [ping, setPing] = useState<number | null>(null);
   const [speed, setSpeed] = useState<number | null>(null);

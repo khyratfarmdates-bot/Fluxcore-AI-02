@@ -7,7 +7,7 @@ import { onboardingService } from "../onboarding/OnboardingService";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { useWorkspace } from "../contexts/WorkspaceContext";
 import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
-import { toast } from "sonner";
+import { toast } from "../lib/soundToast";
 
 export type AIProvider = "gemini" | "openai" | "claude" | "grok" | "deepseek";
 import { Key, ShieldCheck, CheckCircle2, ChevronDown, Zap, Shield, Cpu, Activity, BarChart3, ShieldAlert, Loader2 } from "lucide-react";
@@ -87,8 +87,13 @@ export function SettingsView() {
   }, []);
 
   const handleSave = () => {
-    providerManager.setConfig({ provider, apiKey });
+    if (!apiKey.trim()) {
+      toast.error('⚠️ يرجى إدخال مفتاح API قبل الحفظ');
+      return;
+    }
+    providerManager.setConfig({ provider, apiKey: apiKey.trim() });
     setSaved(true);
+    toast.success(`✅ تم حفظ مفتاح ${provider} وتطبيقه على كامل النظام بنجاح!`);
     setTimeout(() => setSaved(false), 2000);
   };
 
@@ -111,8 +116,9 @@ export function SettingsView() {
       const res = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: safeStringify({ prompt: "رد بكلمة واحدة: مرحباً", provider, apiKey }),
+        body: safeStringify({ prompt: "رد بكلمة واحدة: مرحباً", provider, apiKey: apiKey.trim() }),
       });
+      const resData = await res.json();
       if (res.ok) {
         setTestResult({ success: true, message: `اتصال متزامن ناجح! مفتاح ${provider} يعمل بكفاءة.` });
         setKeyStats({
@@ -123,11 +129,20 @@ export function SettingsView() {
            max: 100
         });
       } else {
-        const err = await res.json();
-        setTestResult({ success: false, message: `فشل الاتصال: ${err.error || 'تأكد من المفتاح'}` });
+        let errorMsg = resData?.error || 'تأكد من المفتاح';
+        // Make error messages clearer
+        if (res.status === 401 || errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('غير صالح')) {
+          errorMsg = '❌ المفتاح غير صالح أو منتهي الصلاحية. تأكد من مفتاحك على Google AI Studio أو OpenAI.';
+        } else if (res.status === 429 || errorMsg.includes('quota') || errorMsg.includes('حصة')) {
+          errorMsg = '⚠️ تجاوزت حصة الاستخدام لهذا المفتاح. جرب مفتاحاً آخر أو انتظر قليلاً.';
+        } else if (res.status === 400) {
+          errorMsg = '⚠️ لم يتم إرسال المفتاح. تأكد من إدخال المفتاح في حقل الإدخال.';
+        }
+        setTestResult({ success: false, message: `فشل الاتصال: ${errorMsg}` });
       }
     } catch (e: any) {
-      setTestResult({ success: false, message: "حدث خطأ أثناء محاولة الاتصال." });
+      setTestResult({ success: false, message: "ℹ️ تعذّر الوصول للخادم - تأكد من تشغيل التطبيق أو أعد تحميل الصفحة." });
+      console.error('[SettingsView] Test connection error:', e);
     } finally {
       setTesting(false);
     }

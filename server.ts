@@ -152,7 +152,7 @@ async function startServer() {
 
   // API Route for AI Generation
   app.post("/api/ai/generate", async (req, res) => {
-    const { prompt, provider, apiKey } = req.body;
+    const { prompt, provider, apiKey, image } = req.body;
     let keyToUse = sanitizeApiKey(apiKey || (provider === "openai" ? process.env.OPENAI_API_KEY : process.env.GEMINI_API_KEY));
     
     if (!prompt || !keyToUse) {
@@ -169,32 +169,89 @@ async function startServer() {
     try {
       if (provider === "openai") {
         const openai = new OpenAI({ apiKey: keyToUse });
+        let messages: any[] = [];
+        if (image) {
+          messages = [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: prompt },
+                { type: "image_url", image_url: { url: image } }
+              ]
+            }
+          ];
+        } else {
+          messages = [{ role: "user", content: prompt }];
+        }
+
         const response = await openai.chat.completions.create({
-          model: "gpt-4-turbo",
-          messages: [{ role: "user", content: prompt }],
+          model: image ? "gpt-4o" : "gpt-4-turbo",
+          messages: messages,
         });
         res.json({ result: response.choices[0].message.content });
       } else {
         const ai = geminiClient(keyToUse);
         
+        let inlineDataPart: any = null;
+        if (image) {
+          if (image.startsWith("data:")) {
+            try {
+              const commaIndex = image.indexOf(",");
+              if (commaIndex !== -1) {
+                const mimeMatch = image.substring(0, commaIndex).match(/data:([^;]+);base64/);
+                const base64Data = image.substring(commaIndex + 1).replace(/\s/g, "");
+                const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
+                
+                inlineDataPart = {
+                  inlineData: {
+                    data: base64Data,
+                    mimeType: mimeType
+                  }
+                };
+                console.log(`[AI Vision] Successfully parsed base64 image data of type: ${mimeType}, size: ${base64Data.length} chars`);
+              }
+            } catch (err) {
+              console.error("[AI Vision] Failed to parse base64 image data:", err);
+            }
+          } else if (image.startsWith("http://") || image.startsWith("https://")) {
+            try {
+              console.log(`[AI Vision] Downloading remote image for Gemini: ${image}`);
+              const imgRes = await axios.get(image, { responseType: 'arraybuffer', timeout: 8000 });
+              const contentType = imgRes.headers['content-type'] || 'image/jpeg';
+              const base64Data = Buffer.from(imgRes.data).toString('base64');
+              
+              inlineDataPart = {
+                inlineData: {
+                  data: base64Data,
+                  mimeType: contentType
+                }
+              };
+              console.log(`[AI Vision] Successfully downloaded and converted remote image of type: ${contentType}, size: ${base64Data.length} chars`);
+            } catch (err: any) {
+              console.error("[AI Vision] Failed to download remote image for Gemini:", err.message);
+            }
+          }
+        }
+        
         // Robust model rotation strategy to handle Quota Exceeded (429) & High Demand (503) errors
         const modelsToTry = [
-            "gemini-2.5-flash",
-            "gemini-2.0-flash",
-            "gemini-1.5-flash",
-            "gemini-2.5-pro",
-            "gemini-1.5-pro"
+            "gemini-flash-latest",
+            "gemini-2.5-flash-lite",
+            "gemini-pro-latest"
         ];
 
         let lastError: any = null;
         
         for (const modelName of modelsToTry) {
           try {
-            console.log(`[AI] Trying model: ${modelName}`);
+            console.log(`[AI] Trying model: ${modelName}${inlineDataPart ? " (with image)" : ""}`);
             const response = await ai.models.generateContent({
               model: modelName,
-              contents: prompt,
-              config: {
+              contents: inlineDataPart ? [
+                { text: prompt },
+                inlineDataPart
+              ] : prompt,
+              config: inlineDataPart ? undefined : {
                 tools: [{ googleSearch: {} }]
               }
             });
@@ -467,9 +524,9 @@ async function startServer() {
       } else {
         const ai = geminiClient(keyToUse);
         const visionModels = [
-          "gemini-2.5-flash",
-          "gemini-2.0-flash", 
-          "gemini-1.5-flash"
+          "gemini-flash-latest",
+          "gemini-2.5-flash-lite",
+          "gemini-pro-latest"
         ];
         let lastVisionErr = null;
 
@@ -583,7 +640,7 @@ async function startServer() {
         }
 
         const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-flash-latest',
           contents
         });
         
@@ -681,9 +738,9 @@ async function startServer() {
       const ai = geminiClient(keyToUse);
       // Try flash-series for speed
       const engineModels = [
-        "gemini-2.5-flash", 
-        "gemini-2.0-flash", 
-        "gemini-1.5-flash"
+        "gemini-flash-latest", 
+        "gemini-2.5-flash-lite", 
+        "gemini-pro-latest"
       ];
       let lastActionErr = null;
       
@@ -1358,7 +1415,7 @@ async function startServer() {
 اكتب الرد مباشرة بدون مقدمة.`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-flash-latest",
         contents: prompt,
       });
       return res.json({ reply: response.text?.trim() || "حدث خطأ في الرد. جرب مرة ثانية." });
@@ -1448,6 +1505,19 @@ async function startServer() {
     return res.status(200).json({ status: "ok" });
   });
 
+  // API Health check
+  app.get("/api/health", (req, res) => {
+    res.json({ 
+      status: "ok", 
+      timestamp: new Date().toISOString(),
+      firebaseProjectId: firebaseConfig?.projectId || "missing",
+      envProjectId: process.env.GOOGLE_CLOUD_PROJECT || "missing",
+      dbInitialized: !!_db,
+      hasGeminiKey: !!process.env.GEMINI_API_KEY,
+      hasOpenaiKey: !!process.env.OPENAI_API_KEY
+    });
+  });
+
   // Vite middleware for development
 
   if (process.env.NODE_ENV !== "production") {
@@ -1463,19 +1533,6 @@ async function startServer() {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
-
-  // API Health check
-  app.get("/api/health", (req, res) => {
-    res.json({ 
-      status: "ok", 
-      timestamp: new Date().toISOString(),
-      firebaseProjectId: firebaseConfig?.projectId || "missing",
-      envProjectId: process.env.GOOGLE_CLOUD_PROJECT || "missing",
-      dbInitialized: !!_db,
-      hasGeminiKey: !!process.env.GEMINI_API_KEY,
-      hasOpenaiKey: !!process.env.OPENAI_API_KEY
-    });
-  });
 
   console.log(`[Server] Attempting to listen on port ${PORT}...`);
   app.listen(PORT, "0.0.0.0", () => {

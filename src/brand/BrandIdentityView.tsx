@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Briefcase, Settings2, Sparkles, Image as ImageIcon, Loader2, Plus, Palette, BookType, LayoutTemplate, Check, Globe, Users, Edit3, Trash2, ArrowLeftRight, Share2, BarChart2 } from 'lucide-react';
+import { Briefcase, Settings2, Sparkles, Image as ImageIcon, Loader2, Plus, Palette, BookType, LayoutTemplate, Check, Globe, Users, Edit3, Trash2, ArrowLeftRight, Share2, BarChart2, BookOpen, FileText, Database, ToggleLeft, ToggleRight, HelpCircle, X } from 'lucide-react';
 import { useWorkspace, BrandIdentity } from '../contexts/WorkspaceContext';
 import { toast } from '../lib/soundToast';
 import { ShareModal } from '../components/ShareModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { knowledgeLibraryService, BUILT_IN_LIBRARIES, BuiltInLibrary, CustomDocument } from '../intelligence/knowledge/KnowledgeLibraryService';
 
-type Tab = 'profiles' | 'editor' | 'usage';
+type Tab = 'profiles' | 'editor' | 'usage' | 'library';
 
 export function BrandIdentityView() {
   const { brands, activeBrand, setActiveBrandId, createBrand, updateBrand, deleteBrand, loading } = useWorkspace();
@@ -18,6 +19,94 @@ export function BrandIdentityView() {
   const [aiLoading, setAiLoading] = useState(false);
 
   const [formData, setFormData] = useState<Partial<BrandIdentity>>({});
+  const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
+
+  const [customDocs, setCustomDocs] = useState<CustomDocument[]>([]);
+  const [newDocTitle, setNewDocTitle] = useState('');
+  const [newDocContent, setNewDocContent] = useState('');
+  const [selectedLib, setSelectedLib] = useState<BuiltInLibrary | null>(null);
+  const [libraryRefresh, setLibraryRefresh] = useState(0);
+
+  React.useEffect(() => {
+    if (activeBrand) {
+      setCustomDocs(knowledgeLibraryService.getCustomDocuments(activeBrand.id));
+    }
+  }, [activeBrand, libraryRefresh]);
+
+  const handleCharacterPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('يرجى اختيار ملف صورة صالح للأفاتار الشخصي');
+      return;
+    }
+
+    if (file.size > 1500 * 1024) {
+      toast.error('حجم الصورة كبير جداً (الحد الأقصى 1.5 ميجابايت لضمان سرعة المعالجة)');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const dataUrl = event.target?.result as string;
+      setFormData(prev => ({ ...prev, characterPhoto: dataUrl }));
+      toast.success('تم رفع صورة الشخصية بنجاح! جاري استخلاص وتحليل الملامح البصرية ذكياً...');
+      setIsAnalyzingPhoto(true);
+
+      try {
+        const prompt = `أنت خبير فني واستراتيجي في صياغة الهويات البصرية والشخصيات الافتراضية (Virtual Avatars).
+قم بتحليل الصورة الشخصية المرفوعة بدقة فائقة واستخلص "ملف السمات البصرية الموحد" (Visual Traits Profile) الذي يمكن لذكاء اصطناعي توليدي للميديا (مثل Midjourney أو DALL-E) الاعتماد عليه بالكامل لإعادة إنتاج نفس الشخصية في صور وفيديوهات متعددة باتساق مذهل (Character Consistency).
+
+استخرج السمات في فقرات تفصيلية ومركزة باللغة العربية تشمل:
+1. المظهر والملامح العامة: (الطابع البصري، الفئة العمرية التقريبية، المشاعر السائدة كالثقة أو الود).
+2. تفاصيل الرأس والوجه: (شكل العينين، لون ونمط تسريحة الشعر، تعبيرات الوجه المميزة).
+3. الملابس والأسلوب الفريد: (نوع الملابس المفضلة، لوحة الألوان البصرية للأزياء، الإكسسوارات السائدة).
+4. بيئة التصوير والإضاءة: (نمط الخلفية، زوايا الإضاءة والظلال).
+
+صغ البيانات بأسلوب احترافي فخم ومتكامل يسهل نسخه ودمجه تلقائياً مع أوامر التوليد.`;
+
+        const savedConfig = localStorage.getItem('fluxcore_ai_config');
+        const parsedConfig = savedConfig ? JSON.parse(savedConfig) : null;
+        const userApiKey = parsedConfig?.apiKey || "";
+        const userProvider = parsedConfig?.provider || "gemini";
+
+        if (!userApiKey) {
+          toast.error('⚠️ يرجى إدخال مفتاح API أولاً من صفحة الإعدادات قبل تحليل الصور');
+          setIsAnalyzingPhoto(false);
+          return;
+        }
+
+        // Use /api/ai/generate with image for multimodal analysis
+        const res = await fetch('/api/ai/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            prompt,
+            image: dataUrl,
+            provider: userProvider,
+            apiKey: userApiKey
+          })
+        });
+
+        const data = await res.json();
+        if (data.error) {
+          if (res.status === 401) throw new Error('مفتاح الـ API غير صالح أو منتهي الصلاحية. يرجى تحديثه من الإعدادات.');
+          if (res.status === 429) throw new Error('تم تجاوز حصة الاستخدام. يرجى الانتظار قليلاً أو تغيير المفتاح.');
+          throw new Error(data.error);
+        }
+
+        setFormData(prev => ({ ...prev, visualCharacterProfile: data.result }));
+        toast.success('تم تحليل الأفاتار البصري واستخلاص ملف السمات الفنية بنجاح فائق! ✨');
+      } catch (err: any) {
+        console.error("Error analyzing character avatar photo:", err);
+        toast.error("فشل تحليل ملامح الشخصية: " + (err.message || 'خطأ غير معروف'));
+      } finally {
+        setIsAnalyzingPhoto(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleAIFill = async () => {
     if (!aiUrl) return toast.error("أدخل رابط الموقع أولاً");
@@ -31,7 +120,7 @@ export function BrandIdentityView() {
       const scraped = await scrapeRes.json();
       if (scraped.error && !scraped.isFallback) throw new Error(scraped.error);
       
-      const prompt = `استخرج بيانات لإنشاء "هوية علامة تجارية" من هذا النص المأخوذ من موقع إلكتروني.
+      const prompt = `استخرج واستنتج بيانات متكاملة لإنشاء "هوية علامة تجارية فائقة الذكاء" من هذا النص المأخوذ من موقع إلكتروني.
 النص:
 ${(scraped.content || '').substring(0, 4000)}
 
@@ -39,31 +128,78 @@ ${(scraped.content || '').substring(0, 4000)}
 إيميلات: ${(scraped.technical?.emails || []).join(', ')}
 أرقام: ${(scraped.technical?.phones || []).join(', ')}
 
-قم بصياغة البيانات كـ JSON فقط بالصيغة التالية:
+قم بصياغة البيانات كـ JSON فقط بالصيغة التالية (تأكد من كتابة كل شيء تلقائياً باللغة العربية):
 {
   "name": "اسم العلامة التجارية المنطقي",
   "industry": "مجال العمل باختصار شديد (كلمات مفتاحية)",
   "description": "وصف مفصل للنشاط والخدمات المتقدمة التي يقومون بها بناءً على الموقع",
   "targetAudience": "الجمهور المستهدف المتوقع",
-  "preferredCta": "دعوة للإجراء مناسبة",
+  "preferredCta": "دعوة للإجراء مناسبة وسلسة",
   "slogans": "شعار مقترح أو مأخوذ من الموقع",
   "writingStyle": "توقع أسلوب الكتابة للمنصة (رسمي، تفاعلي، ودي..)",
   "contactEmail": "البريد الإلكتروني إن وجد",
-  "contactPhone": "رقم الجوال أو الهاتف للتواصل إن وجد"
+  "contactPhone": "رقم الجوال أو الهاتف للتواصل إن وجد",
+  "personality": "اختر الشخصية الأنسب من بين: Luxury, Modern, Minimal, Corporate, Viral, Gen Z, Arabic Marketing, Storytelling",
+  "selectedVoice": "اقترح الصوت الأنسب من بين أصوات الذكاء الاصطناعي التالية حصراً: alloy, echo, onyx, nova, shimmer",
+  "visualCharacterProfile": "قم بصياغة وتوليد ملف سمات بصرية مقترح ومبتكر للأفاتار البصري الموحد للعلامة التجارية لتمكين توليد صور وفيديوهات إعلانية متناسقة بالذكاء الاصطناعي (مثل: المظهر الكلي، تعبيرات الوجه، الملابس المفضلة، الخلفية والألوان المناسبة لهوية البراند)"
 }`;
       
+      const savedConfig = localStorage.getItem('fluxcore_ai_config');
+      const parsedConfig = savedConfig ? JSON.parse(savedConfig) : null;
+      const userApiKey = parsedConfig?.apiKey || "";
+      const userProvider = parsedConfig?.provider || "gemini";
+
+      if (!userApiKey) {
+        toast.error('⚠️ يرجى إدخال مفتاح API أولاً من صفحة الإعدادات (Gemini أو OpenAI) ثم حفظه');
+        setAiLoading(false);
+        return;
+      }
+
       const aiRes = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, provider: "gemini" })
+        body: JSON.stringify({ 
+          prompt, 
+          provider: userProvider,
+          apiKey: userApiKey
+        })
       });
       
       const aiData = await aiRes.json();
-      if (aiData.error) throw new Error(aiData.error);
+      if (aiData.error) {
+        if (aiRes.status === 401) throw new Error('مفتاح الـ API غير صالح أو منتهي الصلاحية. يرجى تحديثه من الإعدادات.');
+        if (aiRes.status === 429) throw new Error('تم تجاوز حصة الاستخدام. جرب مفتاحاً آخر أو انتظر قليلاً.');
+        throw new Error(aiData.error);
+      }
       
-      let jsonStr = aiData.result;
-      jsonStr = jsonStr.replace(/```json\n?|```/g, '').trim();
-      const parsed = JSON.parse(jsonStr);
+      // Robust JSON extraction: handle markdown fences and extra text
+      let jsonStr = aiData.result || '';
+      // Try to extract JSON block from markdown fences
+      const jsonFenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonFenceMatch) {
+        jsonStr = jsonFenceMatch[1].trim();
+      } else {
+        // Find first { and last } to extract raw JSON
+        const firstBrace = jsonStr.indexOf('{');
+        const lastBrace = jsonStr.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
+        }
+        jsonStr = jsonStr.trim();
+      }
+
+      let parsed: any = {};
+      try {
+        parsed = JSON.parse(jsonStr);
+      } catch (parseErr) {
+        console.warn('[BrandAI] JSON parse failed, using partial fill from raw text', parseErr);
+        // Don't throw - just use what we have
+        parsed = {
+          name: jsonStr.match(/"name"\s*:\s*"([^"]+)"/)?.[1] || '',
+          industry: jsonStr.match(/"industry"\s*:\s*"([^"]+)"/)?.[1] || '',
+          description: jsonStr.match(/"description"\s*:\s*"([^"]+)"/)?.[1] || '',
+        };
+      }
       
       setFormData(prev => ({ 
         ...prev, 
@@ -76,10 +212,14 @@ ${(scraped.content || '').substring(0, 4000)}
         writingStyle: parsed.writingStyle || prev.writingStyle,
         contactEmail: parsed.contactEmail || prev.contactEmail,
         contactPhone: parsed.contactPhone || prev.contactPhone,
+        personality: parsed.personality || prev.personality,
+        selectedVoice: parsed.selectedVoice || prev.selectedVoice,
+        visualCharacterProfile: parsed.visualCharacterProfile || prev.visualCharacterProfile,
       }));
-      toast.success("تم سحب وتحليل البيانات بنجاح");
+      toast.success("تم سحب وتحليل واقتراح كافة بيانات الهوية والأصول بنجاح فائق! ✨");
     } catch (e: any) {
-      toast.error("فشل استخراج البيانات: " + e.message);
+      console.error('[BrandAI] handleAIFill error:', e);
+      toast.error("فشل استخراج البيانات: " + (e.message || 'خطأ غير معروف'));
     } finally {
       setAiLoading(false);
     }
@@ -299,7 +439,18 @@ ${(scraped.content || '').substring(0, 4000)}
             <Briefcase size={16} className={activeTab === 'profiles' ? 'text-rose-400' : 'text-slate-500'} />
             العلامات التجارية (Workspaces)
           </button>
-          
+          {activeBrand && (
+            <button
+              onClick={() => setActiveTab('library')}
+              className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
+                activeTab === 'library' ? 'bg-slate-800 text-white shadow-lg border border-slate-700' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              }`}
+            >
+              <BookOpen size={16} className={activeTab === 'library' ? 'text-rose-400' : 'text-slate-500'} />
+              مكتبة المراجع والمعرفة
+            </button>
+          )}
+
           {activeBrand && (
             <button
               onClick={() => setActiveTab('usage')}
@@ -604,6 +755,33 @@ ${(scraped.content || '').substring(0, 4000)}
                     <input type="text" placeholder="مثال: احجز الآن، انضم للرحلة، تواصل معنا..." value={formData.preferredCta || ''} onChange={e => setFormData({...formData, preferredCta: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-sm text-slate-200 focus:border-rose-500/50 outline-none" />
                   </div>
 
+                  {/* Brand Voice Profile */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-bold uppercase tracking-widest text-slate-400">الهوية الصوتية النشطة (Brand Voice Profile)</label>
+                      {formData.personality && (
+                        <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-md border border-amber-500/20">
+                          مقترح: {
+                            formData.personality === 'Luxury' || formData.personality === 'Corporate' ? 'Onyx (فخم وموقر)' :
+                            formData.personality === 'Gen Z' || formData.personality === 'Viral' || formData.personality === 'Storytelling' ? 'Nova (حيوي ومؤثر)' :
+                            formData.personality === 'Arabic Marketing' ? 'Echo (دافئ وتفاعلي)' : 'Alloy (متزن وطبيعي)'
+                          } ✨
+                        </span>
+                      )}
+                    </div>
+                    <select 
+                      value={formData.selectedVoice || 'alloy'} 
+                      onChange={e => setFormData({...formData, selectedVoice: e.target.value})} 
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-sm text-slate-200 focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/50 outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="alloy">Alloy - متزن، احترافي وطبيعي (عالمي)</option>
+                      <option value="echo">Echo - دافئ، ودود وتفاعلي (رائع للمحتوى العربي)</option>
+                      <option value="onyx">Onyx - فخم، عميق، ووقور (مثالي للعلامات الراقية)</option>
+                      <option value="nova">Nova - شاب، حيوي، ومؤثر (ممتاز للفيديوهات والترندات)</option>
+                      <option value="shimmer">Shimmer - مشرق، واضح ومحفز (رائع للإعلانات والتسويق)</option>
+                    </select>
+                  </div>
+
                   <div className="space-y-4 pt-4 border-t border-slate-800/80">
                     <div className="flex items-center justify-between">
                        <label className="text-xs font-bold uppercase tracking-widest text-slate-400">نبرات مخصصة (Custom Tones)</label>
@@ -648,48 +826,54 @@ ${(scraped.content || '').substring(0, 4000)}
                 </div>
 
                 {/* Brand Assets Placeholder */}
-                <div className="col-span-1 md:col-span-2 space-y-4 pt-6 border-t border-slate-800">
-                  <h3 className="font-black text-lg text-white flex items-center gap-2"><Palette className="text-rose-400" size={18}/> الأصول البصرية (Brand Assets)</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl">
+                <div className="col-span-1 md:col-span-2 space-y-6 pt-6 border-t border-slate-800">
+                  <h3 className="font-black text-lg text-white flex items-center gap-2"><Palette className="text-rose-400" size={18}/> الأصول والهوية البصرية (Visual Assets & Character Avatar)</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* الشعار */}
+                    <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col justify-between">
                       <label className="text-xs font-bold uppercase tracking-widest text-slate-400 block mb-2">الشعار الرئيسي (Upload Logo)</label>
-                      <label className="h-24 border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl flex flex-col items-center justify-center text-slate-500 transition-all cursor-pointer bg-slate-900/50 group overflow-hidden relative">
+                      <label className="h-28 border-2 border-dashed border-slate-750 hover:border-rose-500 rounded-xl flex flex-col items-center justify-center text-slate-500 transition-all cursor-pointer bg-slate-900/50 group overflow-hidden relative">
                         {formData.logo ? (
                           <div className="w-full h-full relative group">
                             <img src={formData.logo} alt="Logo Preview" className="w-full h-full object-contain p-2" />
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                              <span className="text-[10px] font-bold text-white uppercase tracking-tighter">تغيير الصورة</span>
+                              <span className="text-[10px] font-bold text-white uppercase tracking-tighter">تغيير الشعار</span>
                             </div>
                           </div>
                         ) : (
                           <>
-                            <ImageIcon size={24} className="group-hover:scale-110 transition-transform mb-1" />
-                            <span className="text-[10px] font-bold text-slate-500 uppercase">اضغط للرفع</span>
+                            <ImageIcon size={24} className="group-hover:scale-110 transition-transform mb-1 text-slate-400" />
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">رفع الشعار</span>
                           </>
                         )}
                         <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                       </label>
                     </div>
-                    <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl relative overflow-hidden">
+
+                    {/* الألوان */}
+                    <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl relative overflow-hidden flex flex-col justify-between">
                       {isExtractingColors && (
                         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center gap-2">
                           <Loader2 className="animate-spin text-rose-500" size={24} />
                           <span className="text-[10px] font-bold text-rose-300">جاري استخلاص ألوان الشعار...</span>
                         </div>
                       )}
-                      <label className="text-xs font-bold uppercase tracking-widest text-slate-400 block mb-2 flex items-center justify-between">
-                        <span>ألوان العلامة التجارية (Hex Codes)</span>
-                        {formData.colors && (
-                          <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-md">مستخلصة تلقائياً ✨</span>
-                        )}
-                      </label>
-                      <input 
-                        type="text" 
-                        placeholder="#FF0000, #00FF00, #10B981" 
-                        value={formData.colors || ''} 
-                        onChange={e => setFormData({...formData, colors: e.target.value})} 
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-sm text-slate-200 outline-none focus:border-rose-500/50" 
-                      />
+                      <div>
+                        <label className="text-xs font-bold uppercase tracking-widest text-slate-400 block mb-2 flex items-center justify-between">
+                          <span>ألوان العلامة التجارية (Hex Codes)</span>
+                          {formData.colors && (
+                            <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-md">مستخلصة تلقائياً ✨</span>
+                          )}
+                        </label>
+                        <input 
+                          type="text" 
+                          placeholder="#FF0000, #00FF00, #10B981" 
+                          value={formData.colors || ''} 
+                          onChange={e => setFormData({...formData, colors: e.target.value})} 
+                          className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-sm text-slate-200 outline-none focus:border-rose-500/50" 
+                        />
+                      </div>
                       
                       {/* Live Visual Palette Indicator */}
                       {formData.colors && (
@@ -698,10 +882,9 @@ ${(scraped.content || '').substring(0, 4000)}
                           <div className="flex flex-wrap gap-3">
                             {formData.colors.split(',').map((color, idx) => {
                               const trimmedColor = color.trim();
-                              // Simple hex format check
                               if (!trimmedColor.startsWith('#')) return null;
                               return (
-                                <div key={idx} className="flex items-center gap-1.5 bg-slate-900/40 p-1.5 pr-2.5 rounded-full border border-slate-800/80 shadow-inner">
+                                <div key={idx} className="flex items-center gap-1.5 bg-slate-900/40 p-1.5 pr-2.5 rounded-full border border-slate-800/80 shadow-inner" title={trimmedColor}>
                                   <div 
                                     className="w-5 h-5 rounded-full border border-white/10 shadow-sm shrink-0" 
                                     style={{ backgroundColor: trimmedColor }}
@@ -714,6 +897,50 @@ ${(scraped.content || '').substring(0, 4000)}
                         </div>
                       )}
                     </div>
+
+                    {/* صورة الأفاتار البصري */}
+                    <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl relative overflow-hidden flex flex-col justify-between">
+                      {isAnalyzingPhoto && (
+                        <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-sm z-10 flex flex-col items-center justify-center gap-2 p-4 text-center">
+                          <Loader2 className="animate-spin text-rose-500" size={24} />
+                          <span className="text-[10px] font-bold text-rose-300">جاري استخلاص السمات بالذكاء... ✨</span>
+                        </div>
+                      )}
+                      <label className="text-xs font-bold uppercase tracking-widest text-slate-400 block mb-2">صورة الشخصية للأفاتار (Character Photo)</label>
+                      <label className="h-28 border-2 border-dashed border-slate-750 hover:border-rose-500 rounded-xl flex flex-col items-center justify-center text-slate-500 transition-all cursor-pointer bg-slate-900/50 group overflow-hidden relative">
+                        {formData.characterPhoto ? (
+                          <div className="w-full h-full relative group">
+                            <img src={formData.characterPhoto} alt="Avatar Preview" className="w-full h-full object-cover p-1 rounded-lg" />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                              <span className="text-[10px] font-bold text-white uppercase tracking-tighter">تغيير الصورة</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <ImageIcon size={24} className="group-hover:scale-110 transition-transform mb-1 text-rose-400/80" />
+                            <span className="text-[10px] font-bold text-rose-400/80 uppercase">رفع صورة الأفاتار</span>
+                          </>
+                        )}
+                        <input type="file" accept="image/*" onChange={handleCharacterPhotoUpload} className="hidden" />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Visual Character Profile Field */}
+                  <div className="space-y-2 mt-4">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-bold uppercase tracking-widest text-slate-400">ملف السمات البصرية المستخلصة (Brand Character Visual Profile)</label>
+                      {formData.visualCharacterProfile && (
+                        <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">مستقر وجاهز للتوليد ✨</span>
+                      )}
+                    </div>
+                    <textarea 
+                      rows={6} 
+                      placeholder="هنا ستظهر الملامح البصرية والسمات الجسدية واللباس المستخلص بالذكاء الاصطناعي فور رفع صورة الأفاتار. يمكنك أيضاً كتابتها أو تعديلها يدوياً لتوجيه ذكاء التوليد البصري بدقة متناهية..." 
+                      value={formData.visualCharacterProfile || ''} 
+                      onChange={e => setFormData({...formData, visualCharacterProfile: e.target.value})} 
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-sm text-slate-300 focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/50 outline-none resize-none font-sans leading-relaxed" 
+                    />
                   </div>
                 </div>
 
@@ -741,6 +968,270 @@ ${(scraped.content || '').substring(0, 4000)}
                     <p className="text-[10px] text-rose-400 mt-2 font-medium bg-rose-500/10 inline-block px-2 py-0.5 rounded">صور تم توليدها بالذكاء الاصطناعي</p>
                  </div>
               </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'library' && activeBrand && (
+            <motion.div key="library" initial={{opacity:0, y:15}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-15}} className="space-y-8 pb-20">
+              <div className="border-b border-slate-800 pb-6 sticky top-0 bg-slate-900/80 backdrop-blur-md z-20 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                 <div>
+                    <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                      <BookOpen className="text-rose-400" /> مكتبة المراجع والمعرفة الذكية
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-1">غذّي المضيف الذكي بالكتيبات الإرشادية، وقواعد التسويق، وأدلة المنتجات لزيادة دقة وجودة التوليد.</p>
+                 </div>
+                 
+                 {/* AI Feed Sync Indicator */}
+                 <div className="bg-slate-950/80 border border-indigo-500/20 px-4 py-2.5 rounded-2xl flex items-center gap-3">
+                   <div className="relative flex h-3 w-3">
+                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                     <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                   </div>
+                   <div className="text-right">
+                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">حالة تغذية المساعد:</span>
+                     <span className="text-xs font-bold text-indigo-300">متصل وجاهز للاستنباط الذكي 🧠</span>
+                   </div>
+                 </div>
+              </div>
+
+              {/* Built-in Premium Libraries Section */}
+              <div className="space-y-4">
+                <h3 className="text-base font-black text-white flex items-center gap-2">
+                  <Database size={18} className="text-rose-400" /> المكتبات والمراجع الجاهزة (Built-in Premium Libraries)
+                </h3>
+                <p className="text-xs text-slate-400">مكتبات تسويقية وتخصصية معدة مسبقاً من قِبل الخبراء، يمكنك تفعيلها فوراً ليقرأها البوت.</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                  {BUILT_IN_LIBRARIES.map(lib => {
+                    const isEnabled = knowledgeLibraryService.isLibraryEnabled(activeBrand.id, lib.id);
+                    return (
+                      <div 
+                        key={lib.id}
+                        className={`bg-slate-950/40 backdrop-blur-md border p-6 rounded-[24px] flex flex-col gap-4 transition-all duration-300 ${
+                          isEnabled 
+                            ? 'border-indigo-500/30 bg-indigo-500/[0.005] shadow-[0_12px_30px_-8px_rgba(99,102,241,0.1),inset_0_1px_1px_rgba(255,255,255,0.03)]' 
+                            : 'border-slate-800/80 hover:border-slate-700/80 hover:bg-slate-950/70'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex gap-3">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                              isEnabled ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-slate-900 text-slate-500 border border-slate-800'
+                            }`}>
+                              <BookType size={20} />
+                            </div>
+                            <div className="text-right">
+                              <span className="text-[10px] font-bold text-slate-500 bg-slate-900 border border-slate-850 px-2 py-0.5 rounded-md mb-1 inline-block">
+                                {lib.category}
+                              </span>
+                              <h4 className="text-sm font-black text-white">{lib.name}</h4>
+                            </div>
+                          </div>
+
+                          {/* Toggle Switch */}
+                          <button
+                            onClick={() => {
+                              knowledgeLibraryService.toggleLibrary(activeBrand.id, lib.id, !isEnabled);
+                              setLibraryRefresh(prev => prev + 1);
+                              if (!isEnabled) {
+                                toast.success(`تم ربط وتغذية المساعد بمكتبة "${lib.name}" بنجاح! 🚀`);
+                              } else {
+                                toast.info(`تم فصل مكتبة "${lib.name}" عن المساعد.`);
+                              }
+                            }}
+                            className="focus:outline-none transition-transform active:scale-95 cursor-pointer"
+                            title={isEnabled ? "تعطيل وفصل المكتبة" : "تفعيل وربط المكتبة"}
+                          >
+                            {isEnabled ? (
+                              <ToggleRight className="text-indigo-400 w-11 h-11" />
+                            ) : (
+                              <ToggleLeft className="text-slate-600 w-11 h-11" />
+                            )}
+                          </button>
+                        </div>
+
+                        <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                          {lib.description}
+                        </p>
+
+                        <div className="flex items-center justify-between pt-3 border-t border-slate-850/80 mt-auto">
+                          <span className="text-[9.5px] font-bold text-slate-550 flex items-center gap-1.5">
+                            {isEnabled ? (
+                              <><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-sm animate-pulse"></span> مفعّلة ونشطة في الـ Context</>
+                            ) : (
+                              <><span className="w-1.5 h-1.5 rounded-full bg-slate-600"></span> معطلة ومخفية</>
+                            )}
+                          </span>
+                          
+                          <button 
+                            onClick={() => setSelectedLib(lib)}
+                            className="text-xs font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1.5 bg-indigo-500/5 hover:bg-indigo-500/10 px-3.5 py-1.5 rounded-xl border border-indigo-500/10 transition-colors"
+                          >
+                            <span>عرض الدليل كاملاً 👁️‍🗨️</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Documents Section */}
+              <div className="space-y-6 pt-4 border-t border-slate-800/80">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <FileText size={18} className="text-rose-400" /> المستندات والمعارف المخصصة (Custom Documents)
+                  </h3>
+                  <span className="text-[10px] text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full font-bold">
+                    إجمالي المستندات المضافة: {customDocs.length}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400">أضف سياسات متجرك، أو تفاصيل خاصة بمنتجاتك، أو أي مستندات ترغب بأن يعتمد عليها المساعد في إجاباته وكتابته.</p>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-2">
+                  {/* Add New Custom Doc Form */}
+                  <div className="lg:col-span-1 bg-slate-950/60 border border-slate-800/80 p-6 rounded-3xl space-y-4">
+                    <h4 className="text-sm font-black text-white">أضف مرجع معرفي مخصص</h4>
+                    
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">عنوان المستند أو المرجع *</label>
+                      <input 
+                        type="text" 
+                        placeholder="مثال: أسعار الشحن والتوصيل"
+                        value={newDocTitle}
+                        onChange={e => setNewDocTitle(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2.5 px-4 text-xs text-slate-200 focus:border-rose-500/50 outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">المحتوى المعرفي (النصوص والتفاصيل) *</label>
+                      <textarea 
+                        rows={6}
+                        placeholder="اكتب المعارف هنا بالتفصيل ليحفظها الذكاء الاصطناعي ويستخدمها بدقة..."
+                        value={newDocContent}
+                        onChange={e => setNewDocContent(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2.5 px-4 text-xs text-slate-200 focus:border-rose-500/50 outline-none resize-none leading-relaxed"
+                      />
+                    </div>
+
+                    <button 
+                      onClick={() => {
+                        if (!newDocTitle.trim() || !newDocContent.trim()) {
+                          toast.error("يرجى ملء جميع الحقول المطلوبة للمستند");
+                          return;
+                        }
+                        const updated = knowledgeLibraryService.addCustomDocument(activeBrand.id, newDocTitle, newDocContent);
+                        setCustomDocs(updated);
+                        setNewDocTitle('');
+                        setNewDocContent('');
+                        setLibraryRefresh(prev => prev + 1);
+                        toast.success(`تم حفظ المرجع "${newDocTitle}" ودمجه في عقل المساعد بنجاح! ✨`);
+                      }}
+                      className="w-full bg-rose-600 hover:bg-rose-500 text-white rounded-xl py-2.5 text-xs font-bold transition-all shadow-md shadow-rose-600/10 flex items-center justify-center gap-1.5 active:scale-98 cursor-pointer"
+                    >
+                      <Plus size={14} />
+                      <span>حفظ وربط مع المساعد</span>
+                    </button>
+                  </div>
+
+                  {/* List of Custom Docs */}
+                  <div className="lg:col-span-2 space-y-4">
+                    {customDocs.length === 0 ? (
+                      <div className="py-16 text-center border-2 border-dashed border-slate-850 rounded-3xl text-slate-500 bg-slate-950/20">
+                        <FileText size={40} className="mx-auto mb-3 opacity-40 text-slate-500" />
+                        <p className="text-xs font-bold">لا يوجد مستندات مخصصة مضافة حالياً.</p>
+                        <p className="text-[10px] text-slate-550 mt-1">يمكنك إضافة أول مرجع للمساعد الذكي عبر النموذج الجانبي.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[460px] overflow-y-auto pr-1.5 custom-scrollbar">
+                        {customDocs.map(doc => (
+                          <div key={doc.id} className="bg-slate-950/30 border border-slate-850 p-5 rounded-2xl flex flex-col gap-3 group relative">
+                            <button 
+                              onClick={() => {
+                                const updated = knowledgeLibraryService.deleteCustomDocument(activeBrand.id, doc.id);
+                                setCustomDocs(updated);
+                                setLibraryRefresh(prev => prev + 1);
+                                toast.info(`تم حذف المرجع وتحديث ذاكرة المساعد.`);
+                              }}
+                              className="absolute top-4 left-4 text-slate-500 hover:text-rose-500 bg-slate-900 border border-slate-850 p-1.5 rounded-lg transition-colors cursor-pointer"
+                              title="حذف المستند نهائياً"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+
+                            <div className="text-right">
+                              <h5 className="text-xs font-black text-white pl-8 leading-tight">{doc.title}</h5>
+                              <span className="text-[8.5px] font-mono text-slate-500 block mt-1">
+                                {new Date(doc.createdAt).toLocaleDateString('ar-SA')}
+                              </span>
+                            </div>
+
+                            <p className="text-[11px] text-slate-400 line-clamp-4 leading-relaxed font-medium bg-slate-950/50 p-2.5 rounded-xl border border-slate-900/60">
+                              {doc.content}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Built-in Library View Modal */}
+              <AnimatePresence>
+                {selectedLib && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4"
+                  >
+                    <motion.div 
+                      initial={{ scale: 0.95, y: 15 }}
+                      animate={{ scale: 1, y: 0 }}
+                      exit={{ scale: 0.95, y: 15 }}
+                      className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden text-right"
+                      dir="rtl"
+                    >
+                      {/* Header */}
+                      <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
+                        <div className="flex gap-3 items-center">
+                          <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
+                            <BookOpen size={18} />
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{selectedLib.category}</span>
+                            <h4 className="text-base font-black text-white leading-tight">{selectedLib.name}</h4>
+                          </div>
+                        </div>
+                        
+                        <button 
+                          onClick={() => setSelectedLib(null)}
+                          className="text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-800 p-2 rounded-xl transition-colors cursor-pointer"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+
+                      {/* Content */}
+                      <div className="p-6 overflow-y-auto custom-scrollbar flex-1 font-sans leading-relaxed text-xs text-slate-300 whitespace-pre-line select-text">
+                        {selectedLib.content}
+                      </div>
+
+                      {/* Footer */}
+                      <div className="p-4 border-t border-slate-800 bg-slate-950/20 flex justify-end">
+                        <button 
+                          onClick={() => setSelectedLib(null)}
+                          className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-6 py-2.5 rounded-xl transition-colors active:scale-97 cursor-pointer"
+                        >
+                          إغلاق المعاينة
+                        </button>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
 
