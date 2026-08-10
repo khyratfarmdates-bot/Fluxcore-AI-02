@@ -18,7 +18,12 @@ import {
   ChevronLeft,
   X,
   Info,
-  ExternalLink
+  ExternalLink,
+  Share2,
+  Printer,
+  Copy,
+  Check,
+  FileDown
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { MarketingIntelligence } from '../services/MarketingIntelligence';
@@ -60,15 +65,36 @@ export function SEOStudio() {
   const [isAutomating, setIsAutomating] = useState(false);
   const [report, setReport] = useState<any>(null);
   
-  // States for Smart Path Handling and multiple audit options
+  // States for Smart Path Handling, Strategy options, and Sharing
   const [urlMode, setUrlMode] = useState<'strip' | 'exact'>('strip');
   const [strategyMode, setStrategyMode] = useState<'full_site' | 'competitors_search' | 'keywords_density' | 'trust_ux'>('full_site');
   const [showPathChoicePopup, setShowPathChoicePopup] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [reportShareUrl, setReportShareUrl] = useState('');
 
-  // Update default states when activeBrand changes
+  // Update default states when activeBrand changes or check URL for shared report ID
   useEffect(() => {
-    if (activeBrand?.seoUrl) {
+    if (activeBrand?.seoUrl && !url) {
       setUrl(activeBrand.seoUrl);
+    }
+
+    // Check if page opened with share link URL param ?reportId=...
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sharedReportId = urlParams.get('reportId');
+      if (sharedReportId) {
+        const storedReports = JSON.parse(localStorage.getItem('fluxcore_seo_reports') || '{}');
+        if (storedReports[sharedReportId]) {
+          const item = storedReports[sharedReportId];
+          setReport(item.report);
+          setStrategyMode(item.strategyMode || 'full_site');
+          if (item.url) setUrl(item.url);
+          toast.success("تم فتح التقرير المشارك بنجاح!");
+        }
+      }
+    } catch (err) {
+      console.warn("Could not parse share parameter", err);
     }
   }, [activeBrand]);
 
@@ -78,7 +104,6 @@ export function SEOStudio() {
   const handleAnalyzeClick = () => {
     if (!url || !activeBrand) return;
     
-    // Check if URL has subpaths and user has not explicitly chosen "exact"
     const hasPath = hasUrlPath(url);
     if (hasPath && urlMode === 'strip' && !showPathChoicePopup) {
       setShowPathChoicePopup(true);
@@ -100,7 +125,27 @@ export function SEOStudio() {
       }
 
       const result = await MarketingIntelligence.analyzeWebsite(finalUrlToAnalyze, activeBrand!.id, strategyMode);
-      setReport(result);
+      
+      // Generate a unique report ID for sharing
+      const uniqueReportId = `seo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const resultWithId = { ...result, reportId: uniqueReportId };
+
+      // Save report into localStorage so colleagues opening the link can view it instantly
+      try {
+        const storedReports = JSON.parse(localStorage.getItem('fluxcore_seo_reports') || '{}');
+        storedReports[uniqueReportId] = {
+          reportId: uniqueReportId,
+          url: finalUrlToAnalyze,
+          strategyMode,
+          report: resultWithId,
+          createdAt: new Date().toISOString()
+        };
+        localStorage.setItem('fluxcore_seo_reports', JSON.stringify(storedReports));
+      } catch (e) {
+        console.warn("LocalStorage save error", e);
+      }
+
+      setReport(resultWithId);
       toast.success("اكتمل فحص السيو الذكي المخصص بنجاح!");
     } catch (e: any) {
       console.error(e);
@@ -108,6 +153,28 @@ export function SEOStudio() {
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  // Generate shareable link
+  const handleShareReport = () => {
+    if (!report) return;
+    const reportId = report.reportId || `rep_${Date.now()}`;
+    const generatedUrl = `${window.location.origin}${window.location.pathname}?reportId=${reportId}`;
+    setReportShareUrl(generatedUrl);
+    setShowShareModal(true);
+  };
+
+  const copyShareUrlToClipboard = () => {
+    if (!reportShareUrl) return;
+    navigator.clipboard.writeText(reportShareUrl);
+    setCopied(true);
+    toast.success("تم نسخ رابط التقرير المخصص إلى المحافظة!");
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  // Handle PDF Export / Printing
+  const handlePrintPdf = () => {
+    window.print();
   };
 
   const handleStartAutomation = async () => {
@@ -130,41 +197,119 @@ export function SEOStudio() {
   const strategyOptions = [
     { 
       id: 'full_site', 
-      title: 'فحص بنيوي وسيو شامل بالكامل', 
-      desc: 'تدقيق فني متكامل للميتا، ووسوم العناوين (H1-H3)، ومشاكل الأرشفة والأكواد للرابط بالكامل.',
-      icon: <Globe className="text-indigo-400 group-hover:scale-110 transition-transform" size={20} />,
+      title: 'فحص بنيوي وسيو شامل', 
+      desc: 'تدقيق فني للميتا والعناوين',
+      icon: <Globe className="text-indigo-400 shrink-0" size={16} />,
       badge: 'الوضع الفني'
     },
     { 
       id: 'competitors_search', 
-      title: 'تحليل المنافسين الفوري ببحث الويب', 
-      desc: 'معاينة حية وتجسس في محركات البحث (Spy SEO) لمقارنة موقعك مع 3 منافسين محليين واستنباط الثغرات.',
-      icon: <Users className="text-emerald-400 group-hover:scale-110 transition-transform" size={20} />,
-      badge: 'واقعي / ويب فوري'
+      title: 'تحليل المنافسين (Spy SEO)', 
+      desc: 'مقارنة حية مع 3 منافسين',
+      icon: <Users className="text-emerald-400 shrink-0" size={16} />,
+      badge: 'ويب فوري'
     },
     { 
       id: 'keywords_density', 
-      title: 'تحسين الكثافة وبوصلة نية البحث', 
-      desc: 'تحليل الكلمات ذات نية الشراء الأعلى (Commercial Intent) ومدى ملاءمتها مع محركات بحث جوجل.',
-      icon: <Target className="text-amber-400 group-hover:scale-110 transition-transform" size={20} />,
-      badge: 'رائج ومربح'
+      title: 'نية الشراء والكثافة', 
+      desc: 'استخراج الكلمات المربحة',
+      icon: <Target className="text-amber-400 shrink-0" size={16} />,
+      badge: 'نية الشراء'
     },
     { 
       id: 'trust_ux', 
-      title: 'تحليل الموثوقية وتجربة العميل E-E-A-T', 
-      desc: 'فحص جودة نصوص الإقناع (CRO) وعناصر الأمان لتقليص سلال المشتريات المتروكة في متجرك.',
-      icon: <Compass className="text-rose-400 group-hover:scale-110 transition-transform" size={20} />,
-      badge: 'مستوى زيادة المبيعات'
+      title: 'الموثوقية وتجربة العميل', 
+      desc: 'فحص الأمان والـ CRO',
+      icon: <Compass className="text-rose-400 shrink-0" size={16} />,
+      badge: 'زيادة المبيعات'
     },
   ];
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20 rtl text-right">
       
+      {/* Share Report Dedicated Modal */}
+      <AnimatePresence>
+        {showShareModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 print:hidden">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowShareModal(false)}
+              className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative bg-slate-900 border border-indigo-500/40 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl shadow-indigo-500/10 space-y-6 text-right z-10"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                    <Share2 size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-base text-white">رابط مشاركة التقرير المخصص</h3>
+                    <p className="text-[10px] text-slate-400 font-bold">يمكنك إرسال هذا الرابط المباشر لزملائك أو خبراء السيو</p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setShowShareModal(false)}
+                  className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-400">الرابط المباشر المولد للتقرير:</label>
+                <div className="flex items-center gap-2 p-2 bg-slate-950 border border-slate-800 rounded-2xl">
+                  <input 
+                    type="text" 
+                    readOnly 
+                    value={reportShareUrl} 
+                    className="flex-1 bg-transparent border-none outline-none text-xs text-indigo-300 font-mono ltr px-2"
+                  />
+                  <button 
+                    onClick={copyShareUrlToClipboard}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md shrink-0"
+                  >
+                    {copied ? <Check size={14} className="text-emerald-300" /> : <Copy size={14} />}
+                    {copied ? "تم النسخ!" : "نسخ الرابط"}
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-4 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl text-xs text-slate-300 space-y-1">
+                <span className="font-extrabold text-indigo-400 block">ℹ️ ميزة المشاركة الفورية:</span>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  عند فتح هذا الرابط في أي متصفح؛ سيتم عرض كافة تحليلات وجداول هذا التقرير مباشرة دون الحاجة لخصم رصيد أو إعادة استعلام السيو.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handlePrintPdf}
+                  className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-bold text-xs flex items-center gap-2 transition-colors"
+                >
+                  <Printer size={14} />
+                  <span>طباعة / حفظ كـ PDF</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Dynamic Path Choice Alert Modal */}
       <AnimatePresence>
         {showPathChoicePopup && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 print:hidden">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -232,7 +377,7 @@ export function SEOStudio() {
       </AnimatePresence>
 
       {/* Header section with theme alignment */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 print:hidden">
         <h1 className="text-3xl font-black text-white flex items-center gap-3 justify-start">
           <Sparkles className="text-indigo-400" />
           SEO Studio الذكي
@@ -241,13 +386,13 @@ export function SEOStudio() {
       </div>
 
       {/* Master Control Board */}
-      <div className="bg-slate-900/40 border border-slate-800/80 rounded-[35px] p-8 space-y-8 relative overflow-hidden backdrop-blur-sm">
+      <div className="bg-slate-900/40 border border-slate-800/80 rounded-[35px] p-8 space-y-6 relative overflow-hidden backdrop-blur-sm print:hidden">
         <div className="absolute -left-20 -top-20 w-44 h-44 bg-indigo-500/5 blur-3xl pointer-events-none rounded-full" />
         
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="space-y-6">
           
           {/* URL Entry column */}
-          <div className="lg:col-span-6 space-y-4">
+          <div className="space-y-3">
             <div className="flex justify-between items-center">
               <label className="text-xs font-black uppercase tracking-widest text-slate-500 block">رابط المتجر أو الموقع</label>
               
@@ -277,8 +422,8 @@ export function SEOStudio() {
 
             <div className="relative group">
               <div className="absolute inset-0 bg-indigo-500/5 blur-xl rounded-3xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
-              <div className="relative flex items-center bg-slate-950 border border-slate-800 group-focus-within:border-indigo-500/40 rounded-2xl p-2.5">
-                <Globe className="text-slate-500 mx-3 shrink-0" size={20} />
+              <div className="relative flex items-center bg-slate-950 border border-slate-800 group-focus-within:border-indigo-500/40 rounded-2xl p-2">
+                <Globe className="text-slate-500 mx-3 shrink-0" size={18} />
                 <input 
                   type="text" 
                   value={url}
@@ -288,13 +433,13 @@ export function SEOStudio() {
                     if (!val) setUrlMode('strip');
                   }}
                   placeholder="https://example.com/store"
-                  className="flex-1 bg-transparent border-none outline-none text-white font-medium py-3 text-sm ltr"
+                  className="flex-1 bg-transparent border-none outline-none text-white font-medium py-2.5 text-sm ltr"
                 />
                 
                 <button 
                   onClick={handleAnalyzeClick}
                   disabled={isAnalyzing || !url}
-                  className="px-6 py-3 bg-indigo-600 hover:bg-slate-100 text-white hover:text-slate-950 rounded-xl font-black text-xs flex items-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-indigo-600/10 ml-1 select-none"
+                  className="px-6 py-2.5 bg-indigo-600 hover:bg-slate-100 text-white hover:text-slate-950 rounded-xl font-black text-xs flex items-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-indigo-600/10 ml-1 select-none shrink-0"
                 >
                   {isAnalyzing ? (
                     <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -314,10 +459,10 @@ export function SEOStudio() {
             )}
           </div>
 
-          {/* Multiple Audit Options column */}
-          <div className="lg:col-span-6 space-y-4">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-500 block">خيارات وعمق الفحص الاستراتيجي</label>
-            <div className="grid grid-cols-2 gap-3">
+          {/* COMPACT BUTTON-LIKE STRATEGY OPTIONS ROW */}
+          <div className="space-y-2.5">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-500 block">خيارات وعمق الفحص الاستراتيجي (اختر النمط):</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {strategyOptions.map(opt => {
                 const isSelected = strategyMode === opt.id;
                 return (
@@ -325,29 +470,30 @@ export function SEOStudio() {
                     key={opt.id}
                     onClick={() => setStrategyMode(opt.id as any)}
                     className={cn(
-                      "flex flex-col items-start gap-2 p-3.5 rounded-2xl border transition-all text-right group",
+                      "flex items-center gap-2.5 p-3 rounded-2xl border transition-all text-right group select-none relative overflow-hidden",
                       isSelected 
-                        ? "bg-indigo-500/10 border-indigo-500/40 text-white shadow-xl shadow-indigo-500/5" 
-                        : "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700"
+                        ? "bg-indigo-600 border-indigo-400 text-white shadow-xl shadow-indigo-600/20 ring-2 ring-indigo-500/30" 
+                        : "bg-slate-950 border-slate-800/90 text-slate-300 hover:border-slate-700 hover:bg-slate-900/80"
                     )}
                   >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="p-1.5 rounded-lg bg-slate-900 border border-slate-800">
-                        {opt.icon}
-                      </div>
+                    <div className={cn(
+                      "p-2 rounded-xl border shrink-0 transition-colors",
+                      isSelected ? "bg-indigo-700/50 border-indigo-400/40" : "bg-slate-900 border-slate-800"
+                    )}>
+                      {opt.icon}
+                    </div>
+                    
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-extrabold text-xs text-white truncate">
+                        {opt.title}
+                      </span>
                       <span className={cn(
-                        "text-[9px] px-2 py-0.5 rounded-full font-black",
-                        isSelected ? "bg-indigo-500/20 text-indigo-400" : "bg-slate-900 text-slate-600"
+                        "text-[9px] font-semibold truncate",
+                        isSelected ? "text-indigo-100" : "text-slate-500"
                       )}>
-                        {opt.badge}
+                        {opt.desc}
                       </span>
                     </div>
-                    <span className="font-extrabold text-xs block text-white mt-1">
-                      {opt.title}
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-medium leading-relaxed">
-                      {opt.desc}
-                    </span>
                   </button>
                 );
               })}
@@ -368,18 +514,37 @@ export function SEOStudio() {
             {/* Column 1: Main Diagnostic Insights (2 Cols Wide) */}
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-slate-900/50 border border-slate-800 rounded-[32px] p-8">
-                <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-800">
                   <h3 className="text-lg font-black text-white flex items-center gap-2">
                     <BarChart3 className="text-indigo-400" />
                     تحليل الأداء ومقارنة السوق محلياً
                   </h3>
                   
-                  <span className="px-3 py-1 bg-slate-950 border border-slate-800 text-slate-400 text-[10px] font-black uppercase rounded-lg">
-                    {strategyMode === 'competitors_search' ? "وضع استخبارات الويب جاسوس" :
-                     strategyMode === 'keywords_density' ? "تحليل نية الشراء الكثيفة" :
-                     strategyMode === 'trust_ux' ? "فحص عوامل الثقة والـ CRO" :
-                     "الفحص البنيوي الشامل"}
-                  </span>
+                  {/* Share & Export PDF Action Buttons */}
+                  <div className="flex items-center gap-2 print:hidden">
+                    <button 
+                      onClick={handleShareReport}
+                      className="px-3.5 py-1.5 bg-indigo-600/20 hover:bg-indigo-600 border border-indigo-500/40 text-indigo-300 hover:text-white text-[11px] font-black rounded-xl flex items-center gap-1.5 transition-all shadow-md"
+                    >
+                      <Share2 size={13} />
+                      <span>مشاركة التقرير</span>
+                    </button>
+
+                    <button 
+                      onClick={handlePrintPdf}
+                      className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-[11px] font-black rounded-xl flex items-center gap-1.5 transition-all"
+                    >
+                      <Printer size={13} />
+                      <span>حفظ PDF</span>
+                    </button>
+
+                    <span className="px-3 py-1.5 bg-slate-950 border border-slate-800 text-slate-400 text-[10px] font-black uppercase rounded-xl">
+                      {strategyMode === 'competitors_search' ? "استخبارات الويب جاسوس" :
+                       strategyMode === 'keywords_density' ? "نية الشراء الكثيفة" :
+                       strategyMode === 'trust_ux' ? "عوامل الثقة والـ CRO" :
+                       "الفحص البنيوي الشامل"}
+                    </span>
+                  </div>
                 </div>
 
                 {report.isFallback && (
@@ -444,9 +609,7 @@ export function SEOStudio() {
                     </div>
                   )}
 
-                  {/* ──────────────────────────────────────────────────────────── */}
                   {/* VIEW 1: Competitors Search (Spy SEO) */}
-                  {/* ──────────────────────────────────────────────────────────── */}
                   {strategyMode === 'competitors_search' && report.competitorsTable && (
                     <div className="space-y-4 p-6 bg-slate-950 border border-slate-800/80 rounded-3xl">
                       <div className="flex items-center justify-between">
@@ -487,9 +650,7 @@ export function SEOStudio() {
                     </div>
                   )}
 
-                  {/* ──────────────────────────────────────────────────────────── */}
                   {/* VIEW 2: Keywords Density & Intent */}
-                  {/* ──────────────────────────────────────────────────────────── */}
                   {strategyMode === 'keywords_density' && report.keywordsIntentTable && (
                     <div className="space-y-4 p-6 bg-slate-950 border border-slate-800/80 rounded-3xl">
                       <div className="flex items-center justify-between">
@@ -534,9 +695,7 @@ export function SEOStudio() {
                     </div>
                   )}
 
-                  {/* ──────────────────────────────────────────────────────────── */}
                   {/* VIEW 3: Trust & UX E-E-A-T */}
-                  {/* ──────────────────────────────────────────────────────────── */}
                   {strategyMode === 'trust_ux' && report.trustMetrics && (
                     <div className="space-y-6 p-6 bg-slate-950 border border-slate-800/80 rounded-3xl">
                       <h4 className="text-xs font-black uppercase text-cyan-400 tracking-widest flex items-center gap-2">
@@ -589,9 +748,7 @@ export function SEOStudio() {
                     </div>
                   )}
 
-                  {/* ──────────────────────────────────────────────────────────── */}
                   {/* VIEW 4: Technical Details Matrix for Full Site */}
-                  {/* ──────────────────────────────────────────────────────────── */}
                   {report.technicalDetails && (
                     <div className="p-6 bg-slate-950 border border-slate-800/80 rounded-3xl space-y-4">
                       <h4 className="text-xs font-black uppercase text-indigo-400 tracking-widest flex items-center gap-2">
@@ -679,7 +836,7 @@ export function SEOStudio() {
             </div>
 
             {/* Column 2: Automation & Sidebar Widgets */}
-            <div className="space-y-6">
+            <div className="space-y-6 print:hidden">
                 <div className={cn(
                   "rounded-[32px] p-8 text-white flex flex-col gap-6 shadow-2xl transition-all duration-500 relative overflow-hidden",
                   activeBrand?.seoAutomationEnabled 
@@ -750,12 +907,12 @@ export function SEOStudio() {
             </div>
           </motion.div>
         ) : isAnalyzing ? (
-          <div className="h-64 flex flex-col items-center justify-center gap-4">
+          <div className="h-64 flex flex-col items-center justify-center gap-4 print:hidden">
             <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
             <p className="text-slate-400 font-extrabold animate-pulse text-sm">جاري تنظيف الرقائق واستجلاب بيانات السوق ومحاكاة البحث...</p>
           </div>
         ) : (
-          <div className="h-64 border-2 border-dashed border-slate-805 rounded-[32px] flex flex-col items-center justify-center gap-4 text-slate-500 bg-slate-900/10">
+          <div className="h-64 border-2 border-dashed border-slate-805 rounded-[32px] flex flex-col items-center justify-center gap-4 text-slate-500 bg-slate-900/10 print:hidden">
              <Globe size={44} className="opacity-15 animate-pulse" />
              <p className="font-extrabold text-xs">أدخل رابط متجرك واختر استراتيجيتك لبدء التحسين واستخراج الثغرات</p>
           </div>
