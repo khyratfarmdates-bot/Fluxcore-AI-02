@@ -540,38 +540,39 @@ export function AIAssistant() {
           />
         )}
 
-        <motion.div 
-          className="fixed z-[70] flex flex-col items-start gap-4 pointer-events-auto"
-          style={{ left: 0, top: 0, x: springX, y: springY }}
+        <div 
+          className="fixed bottom-6 left-6 z-[70] flex flex-col items-start gap-4 pointer-events-auto"
         >
           <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
             onClick={() => isActiveGuiding ? setGuide(null, null) : setIsOpen(true)}
             className="group relative"
           >
             <div className="relative">
-              <div className="absolute inset-0 bg-cyan-500/10 rounded-full blur-3xl group-hover:bg-cyan-500/30 transition-colors animate-pulse" />
+              <div className="absolute inset-0 bg-cyan-500/20 rounded-2xl blur-xl group-hover:bg-cyan-500/40 transition-colors animate-pulse" />
               <div className="relative flex items-center justify-center">
-                 {(() => {
-                   const isPopUpActive = hasArrived && (isActiveGuiding || isDemonstrating || isAmbientSuggesting) && !!guideMessage;
-                   const isRightSide = rawTargetLeft > (winWidth - 340);
-                   const pointingDirection = isRightSide ? 'left' : 'right';
-                   
-                   return (
-                     <FluxyCharacter 
-                       size={100} 
-                       emotion={isPopUpActive ? "excited" : emotion} 
-                       active 
-                       locomotionRef={locomotionRef} 
-                       isSmiling={isSmiling || emotion === 'happy' || isPopUpActive} 
-                       isExplaining={(isActiveGuiding || isDemonstrating) && !isPopUpActive} 
-                       isThinking={isProcessing && !isActiveGuiding && !isDemonstrating}
-                       isPointing={isPopUpActive}
-                       pointingDirection={pointingDirection}
-                     />
-                   );
-                 })()}
+                 {/* 
+                   Fluxy 3D Character Walking Body (Temporarily Disabled to Lighten the Site):
+                   <FluxyCharacter 
+                     size={100} 
+                     emotion={isPopUpActive ? "excited" : emotion} 
+                     active 
+                     locomotionRef={locomotionRef} 
+                     isSmiling={isSmiling || emotion === 'happy' || isPopUpActive} 
+                     isExplaining={(isActiveGuiding || isDemonstrating) && !isPopUpActive} 
+                     isThinking={isProcessing && !isActiveGuiding && !isDemonstrating}
+                     isPointing={isPopUpActive}
+                     pointingDirection={pointingDirection}
+                   />
+                 */}
+                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 p-0.5 shadow-[0_0_25px_rgba(99,102,241,0.5)] hover:shadow-[0_0_35px_rgba(99,102,241,0.8)] transition-all cursor-pointer">
+                   <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center relative overflow-hidden group">
+                     <div className="absolute inset-0 bg-indigo-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                     <Sparkles size={24} className="text-cyan-400 group-hover:scale-110 transition-transform animate-pulse" />
+                     <div className="absolute top-1 right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-slate-950" />
+                   </div>
+                 </div>
               </div>
             </div>
           </motion.button>
@@ -664,7 +665,7 @@ export function AIAssistant() {
                );
             })()}
           </AnimatePresence>
-        </motion.div>
+        </div>
       </>
     );
   }
