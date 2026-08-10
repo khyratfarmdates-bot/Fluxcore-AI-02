@@ -1,17 +1,65 @@
 import axios from "axios";
 import { AICore } from "../core/AICore";
 
+export interface CompetitorBenchmark {
+  name: string;
+  domain: string;
+  authorityScore: number;
+  winningKeywords: string;
+  gapAdvantage: string;
+}
+
+export interface KeywordIntentItem {
+  keyword: string;
+  intent: 'تجاري (Commercial)' | 'استكشافي (Informational)';
+  occurrences: number;
+  density: string;
+  conversionPotential: 'مرتفع جداً' | 'متوسط' | 'منخفض';
+}
+
+export interface TrustMetrics {
+  sslVerified: boolean;
+  contactPointFound: boolean;
+  taxOrCRFound: boolean;
+  returnPolicyFound: boolean;
+  trustScore: number;
+  croFixes: string[];
+}
+
 export interface WebsiteAuditResult {
   url: string;
   title: string;
   description: string;
   seoScore: number;
+  technicalScore: number;
+  contentScore: number;
+  summary: string;
   strengths: string[];
   weaknesses: string[];
   recommendations: string[];
   suggestedKeywords: string[];
+  prediction: string;
+  technicalInsights: string;
+  strategyMode: string;
+  competitorsTable?: CompetitorBenchmark[];
+  keywordsIntentTable?: KeywordIntentItem[];
+  trustMetrics?: TrustMetrics;
   isFallback?: boolean;
   fallbackReason?: string;
+  technicalDetails?: {
+    h1s: string[];
+    h2sCount: number;
+    imagesCount: number;
+    imagesWithoutAlt: number;
+    linksCount: number;
+    internalLinks: number;
+    scriptCount: number;
+    styleCount: number;
+    pageSizeKB: number;
+    hasSchema: boolean;
+    emails: string[];
+    phones: string[];
+  };
 }
 
 export class MarketingIntelligence {
@@ -34,85 +82,96 @@ export class MarketingIntelligence {
     const metaContext = JSON.stringify(rawData.meta, null, 2);
     
     let strategyFocusInstructions = "";
+    let jsonSchemaExtra = "";
+
     if (strategyMode === "competitors_search") {
       strategyFocusInstructions = `
-        STRATEGY FOCUS: [تحليل المنافسين الفوري بالاستعانة ببحث الويب - SPY SEO]
-        - Utilize simulated Google Search crawling and live web indexing database for the specific e-commerce niche and territory of this brand.
-        - Identify at least 3 direct or organic search competitors ranking in Saudi/Gulf search engine results for similar queries.
-        - Analyze competitors' estimated authority score, backlink presence, and keywords they win.
-        - Formulate realistic comparisons based on real target market intent.
+        MANDATORY STRATEGY FOCUS: [تحليل المنافسين الفوري وبحث الويب الجاسوس - SPY SEO]
+        - Based on the site's actual industry and content (${rawData.title}), analyze 3 real direct competitors operating in the same market (Saudi Arabia / Gulf).
+        - For each competitor, specify their domain, authority score (0-100), top winning keyword, and strategic gap/advantage you can exploit.
+      `;
+      jsonSchemaExtra = `
+        "competitorsTable": [
+          { "name": "اسم المنافس الأول", "domain": "competitor1.com", "authorityScore": 85, "winningKeywords": "كلمة مفتاحية يفوز بها", "gapAdvantage": "ميزة أو ثغرة تقتنصها منه" },
+          { "name": "اسم المنافس الثاني", "domain": "competitor2.com", "authorityScore": 78, "winningKeywords": "كلمة مفتاحية يفوز بها", "gapAdvantage": "ميزة أو ثغرة تقتنصها منه" },
+          { "name": "اسم المنافس الثالث", "domain": "competitor3.com", "authorityScore": 72, "winningKeywords": "كلمة مفتاحية يفوز بها", "gapAdvantage": "ميزة أو ثغرة تقتنصها منه" }
+        ],
       `;
     } else if (strategyMode === "keywords_density") {
       strategyFocusInstructions = `
-        STRATEGY FOCUS: [تحليل نية البحث ومعدل تحول الزوار - Commercial Intent & Keywords]
-        - Focus heavily on semantic content, analyzing search intent (transactional vs. informational).
-        - Point out "low-hanging fruit" keywords with high buyer-intent.
-        - Evaluate keyword distribution on the site and how well they reflect actual user search queries on Google.
+        MANDATORY STRATEGY FOCUS: [تحليل نية البحث ومعدل الكثافة - Commercial Intent & Keywords Density]
+        - Extract top keywords from the real page text, evaluate intent (Commercial Purchase vs Informational Search).
+        - Provide exact calculated occurrences and density estimation based on actual text length (${rawData.content ? rawData.content.length : 0} chars).
+      `;
+      jsonSchemaExtra = `
+        "keywordsIntentTable": [
+          { "keyword": "كلمة تجارية شراءية", "intent": "تجاري (Commercial)", "occurrences": 14, "density": "2.8%", "conversionPotential": "مرتفع جداً" },
+          { "keyword": "كلمة استكشافية بحثية", "intent": "استكشافي (Informational)", "occurrences": 8, "density": "1.6%", "conversionPotential": "متوسط" },
+          { "keyword": "كلمة منتج محدد", "intent": "تجاري (Commercial)", "occurrences": 6, "density": "1.2%", "conversionPotential": "مرتفع جداً" },
+          { "keyword": "كلمة خدمات محلية", "intent": "تجاري (Commercial)", "occurrences": 5, "density": "1.0%", "conversionPotential": "مرتفع جداً" }
+        ],
       `;
     } else if (strategyMode === "trust_ux") {
       strategyFocusInstructions = `
-        STRATEGY FOCUS: [تحليل الموثوقية وتجربة مستخدم المتجر - E-E-A-T & UX Trust]
-        - Review structural layouts, headings structure, image density without alt metrics, and trust factors.
-        - Critique checkouts flow, safety signs, copywriting, and clarity of CTAs.
-        - Provide actionable visual design changes to decrease cart abandonment and build search trust.
+        MANDATORY STRATEGY FOCUS: [تحليل الموثوقية وتجربة مستخدم المتجر - E-E-A-T & CRO UX Trust Audit]
+        - Audit real trust signals: SSL HTTPS presence (${url.startsWith('https')}), extracted contact points (Phones: ${rawData.technical?.phones?.join(', ') || 'none'}, Emails: ${rawData.technical?.emails?.join(', ') || 'none'}).
+        - Evaluate CRO friction factors, safety signs, return policy clarity, and payment trust.
+      `;
+      jsonSchemaExtra = `
+        "trustMetrics": {
+          "sslVerified": ${url.startsWith('https')},
+          "contactPointFound": ${Boolean(rawData.technical?.phones?.length || rawData.technical?.emails?.length)},
+          "taxOrCRFound": true,
+          "returnPolicyFound": true,
+          "trustScore": 88,
+          "croFixes": [
+            "توضيح الرقم الضريبي والسجل التجاري في الترويسة السفلية.",
+            "إضافة أيقونات الدفع الآمن بجانب زر إكمال الطلب.",
+            "تفعيل التقييمات الموثقة للعملاء السابقين."
+          ]
+        },
       `;
     } else {
       strategyFocusInstructions = `
-        STRATEGY FOCUS: [فحص بنيوي وسيو شامل بالكامل - Standard Technical & Meta SEO]
-        - Thorough analysis of meta descriptions, titles, technical performance index, site size, and script count warnings.
-        - Detailed inspection of schema markups and microdata structures.
+        MANDATORY STRATEGY FOCUS: [فحص بنيوي وسيو شامل بالكامل - Standard Technical & Meta SEO]
+        - Deep dive into technical indicators: H1 tags (${rawData.technical?.h1s?.length || 0}), images without alt (${rawData.technical?.imagesWithoutAlt || 0} of ${rawData.technical?.imagesCount || 0}), page size (${Math.round((rawData.technical?.pageSize || 0)/1024)} KB), script count (${rawData.technical?.scriptCount || 0}).
       `;
     }
 
     const prompt = `
-      You are a World-Class Growth Hacker, Senior SEO Architect, and Spy-SEO Expert. 
-      Analyze this ${rawData.isFallback ? 'estimated/fallback' : 'REAL'} website data and provide a hyper-intelligent, predictive SEO competitive blueprint in Arabic.
+      You are an Elite Senior SEO Architect and Web Intelligence Expert. 
+      Analyze the REAL empirical scraped data for this website and generate a realistic, non-hallucinated, highly accurate Arabic analysis report matching the user's selected strategy mode (${strategyMode}).
       
-      SITE INTELLIGENCE:
+      REAL SCRAPED DOM DATA:
       URL: ${url}
       Title: ${rawData.title}
       Description: ${rawData.description}
-      Social Context: ${socialContext}
-      Meta Data: ${metaContext}
+      Social Meta: ${socialContext}
+      Meta Attributes: ${metaContext}
       Technical Matrix: ${technicalContext}
-      Semantic Content: ${rawData.content.substring(0, 12000)}
+      Raw Body Text Sample: ${rawData.content ? rawData.content.substring(0, 10000) : "N/A"}
       
       ${strategyFocusInstructions}
 
-      DIAGNOSTIC MANDATE:
-      1. Predictive Reach: How likely is this site to rank in the next 3 months based on current authority signals and market search benchmarks?
-      2. Semantic Gap Analysis: What critical sub-topics, commercial keywords, or entities are missing that top-tier competitors dominate in Google Search?
-      3. Technical Debt & Structure: Analyze the hierarchy of H-tags, images without alt text, and presence of Schema Markup.
-      4. Content Velocity & Tone: Does the writing style match modern high-conversion standards for this specific niche?
-      5. Mobile Optimization: Insights based on viewport and meta tags.
-      
-      REPORT REQUIREMENTS (Arabic Only):
-      - SEO Score: Precise evaluation from 0-100.
-      - Strategic Summary: A deep executive perspective on current positioning.
-      - Strengths: What's actually helping the site.
-      - Weaknesses: Critical red flags and missing optimizations.
-      - Technical Insights: Analysis of pageSize, scriptCount, and internal link logic.
-      - Tactical Steps: Concrete, copy-pasteable actions to perform in the next 24 hours.
-      - Semantic Keywords: List 5 "Hidden Gem" intent-based keywords targeting high conversion.
-      
-      Format (STRICT JSON):
+      STRICT JSON FORMAT (Output MUST be valid JSON only):
       {
-        "seoScore": 0-100,
-        "technicalScore": 0-100,
-        "contentScore": 0-100,
-        "summary": "Full strategic analysis",
-        "strengths": ["...", "...", "..."],
-        "weaknesses": ["...", "...", "..."],
-        "recommendations": ["...", "...", "...", "...", "..."],
-        "suggestedKeywords": ["...", "...", "...", "...", "..."],
-        "prediction": "Ranking forecast",
-        "technicalInsights": "Deep dive into technical metrics"
+        "seoScore": 75,
+        "technicalScore": 80,
+        "contentScore": 70,
+        "summary": "ملخص استراتيجي تحليلي دقيق يستند لواقع البيانات المجلوبة بدقة...",
+        ${jsonSchemaExtra}
+        "strengths": ["نقطة قوة حقيقية 1", "نقطة قوة حقيقية 2", "نقطة قوة حقيقية 3"],
+        "weaknesses": ["ثغرة حقيقية 1", "ثغرة حقيقية 2", "ثغرة حقيقية 3"],
+        "recommendations": ["توصية عملية 1", "توصية عملية 2", "توصية عملية 3"],
+        "suggestedKeywords": ["كلمة 1", "كلمة 2", "كلمة 3", "كلمة 4", "كلمة 5"],
+        "prediction": "توقع الأرشفة والظهور خلال 90 يوماً بناءً على الإشارات الفعلية",
+        "technicalInsights": "تحليل للأكواد وحجم الصفحة وسكربتات التتبع بناءً على البيانات الفعلية المجلوبة"
       }
     `;
 
     const aiResult = await AICore.generateContent({
       workspaceId: brandId,
-      goal: "Website SEO Analysis",
+      goal: `SEO Analysis - ${strategyMode}`,
       templateId: "custom",
       params: { rawPrompt: prompt }
     });
@@ -126,6 +185,21 @@ export class MarketingIntelligence {
       description: rawData.description,
       isFallback: !!rawData.isFallback,
       fallbackReason: rawData.fallbackReason || "",
+      strategyMode,
+      technicalDetails: {
+        h1s: rawData.technical?.h1s || [],
+        h2sCount: rawData.technical?.h2s?.length || 0,
+        imagesCount: rawData.technical?.imagesCount || 0,
+        imagesWithoutAlt: rawData.technical?.imagesWithoutAlt || 0,
+        linksCount: rawData.technical?.linksCount || 0,
+        internalLinks: rawData.technical?.internalLinks || 0,
+        scriptCount: rawData.technical?.scriptCount || 0,
+        styleCount: rawData.technical?.styleCount || 0,
+        pageSizeKB: Math.round((rawData.technical?.pageSize || 0) / 1024),
+        hasSchema: !!rawData.technical?.hasSchema,
+        emails: rawData.technical?.emails || [],
+        phones: rawData.technical?.phones || []
+      },
       ...analysis
     };
   }
@@ -139,7 +213,7 @@ export class MarketingIntelligence {
       
       Title: ${rawData.title}
       Description: ${rawData.description}
-      Content: ${rawData.content.substring(0, 3000)}
+      Content: ${rawData.content ? rawData.content.substring(0, 3000) : ''}
       
       Task: Provide specific, copy-pasteable optimizations (Titles, Meta Tags, Hero Text improvements) in Arabic.
       Give strategic advice on how to rank higher for this specific store.
