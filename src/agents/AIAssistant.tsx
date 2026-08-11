@@ -20,7 +20,8 @@ import {
   LayoutGrid,
   Play,
   Pause,
-  SkipForward
+  SkipForward,
+  Sparkles
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { FluxyCharacter } from "./FluxyCharacter";
@@ -419,13 +420,17 @@ export function AIAssistant() {
       audioSystem.playSuccess();
       
       if (activeBrand) {
-        await AILogger.logInteraction({
-           brandId: activeBrand.id,
-           sessionId: currentSessionId,
-           agentRole: 'executive',
-           userMessage: userMsgContent,
-           aiResponse: response.content
-        });
+        try {
+          await AILogger.logInteraction({
+             brandId: activeBrand.id,
+             sessionId: currentSessionId,
+             agentRole: 'executive',
+             userMessage: userMsgContent,
+             aiResponse: response.content
+          });
+        } catch (logErr) {
+          console.warn("[AIAssistant] AILogger persistence skipped silently:", logErr);
+        }
       }
     } catch (e: any) {
       clearInterval(thinkInterval);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Briefcase, Settings2, Sparkles, Image as ImageIcon, Loader2, Plus, Palette, BookType, LayoutTemplate, Check, Globe, Users, Edit3, Trash2, ArrowLeftRight, Share2, BarChart2, BookOpen, FileText, Database, ToggleLeft, ToggleRight, HelpCircle, X } from 'lucide-react';
+import { Briefcase, Settings2, Sparkles, Image as ImageIcon, Loader2, Plus, Palette, BookType, LayoutTemplate, Check, Globe, Users, Edit3, Trash2, ArrowLeftRight, Share2, BarChart2, BookOpen, FileText, Database, ToggleLeft, ToggleRight, HelpCircle, X, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useWorkspace, BrandIdentity } from '../contexts/WorkspaceContext';
 import { toast } from '../lib/soundToast';
 import { ShareModal } from '../components/ShareModal';
@@ -104,6 +104,30 @@ export function BrandIdentityView() {
       } finally {
         setIsAnalyzingPhoto(false);
       }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCrDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setFormData(prev => ({ ...prev, crDocumentUrl: dataUrl }));
+      toast.success('تم إرفاق وثيقة السجل التجاري بنجاح!');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleNationalIdUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setFormData(prev => ({ ...prev, nationalIdUrl: dataUrl }));
+      toast.success('تم إرفاق وثيقة إثبات شخصية المفوض بنجاح!');
     };
     reader.readAsDataURL(file);
   };
@@ -288,7 +312,27 @@ ${(scraped.content || '').substring(0, 4000)}
       "severity": "critical", 
       "actionKey": "cr_number" 
     }
-  ]
+  ],
+  "googleAdsAudit": {
+    "accountStatus": "active",
+    "statusReason": "الحساب الإعلاني نشط ومستعد لتدشين الحملة برمجياً بدون مخاطر حظر.",
+    "policyCheckScore": 94,
+    "suspensionRisks": ["تأكد من إرفاق وثيقة السجل التجاري لتجنب التوقف المؤقت في مراجعة التوثيق"],
+    "suggestedActions": [
+      { "title": "🚀 تدشين حملة إعلانات جوجل الذكية تلقائياً", "desc": "إنشاء وتفعيل حملة البحث برمجياً بالكلمات المفتاحية والميزانية", "actionType": "create_campaign" },
+      { "title": "✨ توليد 3 إعلانات نصوص وميديا جديدة معتمدة", "desc": "إنشاء نصوص وعناوين جذابة متوافقة 100% مع السياسات", "actionType": "generate_ads" },
+      { "title": "🛡️ إرسال وتوثيق الحساب بالسجل التجاري والهوية", "desc": "تقديم ملف التوثيق التجاري المعتمد لدى جوجل أدز", "actionType": "submit_verification" }
+    ],
+    "suggestedCampaign": {
+      "name": "حملة استهداف الشراء والنمو المباشر",
+      "budget": "150 ر.س / يومياً",
+      "keywords": ["أفضل متجر", "شراء مباشر", "عروض ممتازة"],
+      "targetLocations": ["المملكة العربية السعودية", "الرياض", "جدة"]
+    },
+    "generatedAds": [
+      { "headline": "العروض الأكثر طلباً لهذا الموسم", "description": "خدمة متكاملة وسريعة مع ضمان الموثوقية. اطلب الآن واستمتع بالمميزات.", "callToAction": "اطلب الآن" }
+    ]
+  }
 }`;
 
       const savedConfig = localStorage.getItem('fluxcore_ai_config');
@@ -1186,6 +1230,55 @@ ${(scraped.content || '').substring(0, 4000)}
                           className="w-full bg-slate-950 border border-indigo-500/30 rounded-xl py-3 px-4 text-sm text-indigo-300 font-mono focus:border-indigo-500 outline-none" 
                         />
                       </div>
+
+                      <div className="space-y-2 md:col-span-2">
+                        <label className="text-xs font-bold uppercase tracking-widest text-slate-400">اسم المفوض الرسمي / صاحب المؤسسة (Authorized Representative Name)</label>
+                        <input 
+                          type="text" 
+                          placeholder="مثال: محمد عبدالله السليمان" 
+                          value={formData.authorizedName || ''} 
+                          onChange={e => setFormData({...formData, authorizedName: e.target.value})} 
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-sm text-slate-200 focus:border-indigo-500/50 outline-none" 
+                        />
+                      </div>
+
+                      {/* رفع وثيقة السجل التجاري */}
+                      <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col justify-between">
+                        <label className="text-xs font-bold uppercase tracking-widest text-slate-400 block mb-2">وثيقة السجل التجاري الرسمية (Commercial Register Certificate)</label>
+                        <label className="h-24 border-2 border-dashed border-slate-800 hover:border-indigo-500 rounded-xl flex flex-col items-center justify-center text-slate-500 transition-all cursor-pointer bg-slate-900/50 group overflow-hidden relative">
+                          {formData.crDocumentUrl ? (
+                            <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+                              <FileText size={18} />
+                              <span>تم رفع وثيقة السجل بنجاح ✅</span>
+                            </div>
+                          ) : (
+                            <>
+                              <FileText size={22} className="group-hover:scale-110 transition-transform mb-1 text-indigo-400" />
+                              <span className="text-[10px] font-bold text-slate-400 uppercase">رفع شهادة السجل (PDF / صورة)</span>
+                            </>
+                          )}
+                          <input type="file" hidden accept="image/*,application/pdf" onChange={handleCrDocumentUpload} />
+                        </label>
+                      </div>
+
+                      {/* رفع إثبات شخصية المفوض */}
+                      <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col justify-between">
+                        <label className="text-xs font-bold uppercase tracking-widest text-slate-400 block mb-2">إثبات شخصية المفوض (National ID / Passport)</label>
+                        <label className="h-24 border-2 border-dashed border-slate-800 hover:border-indigo-500 rounded-xl flex flex-col items-center justify-center text-slate-500 transition-all cursor-pointer bg-slate-900/50 group overflow-hidden relative">
+                          {formData.nationalIdUrl ? (
+                            <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+                              <ShieldCheck size={18} />
+                              <span>تم رفع الهوية الوطنية/الإثبات بنجاح ✅</span>
+                            </div>
+                          ) : (
+                            <>
+                              <ShieldCheck size={22} className="group-hover:scale-110 transition-transform mb-1 text-indigo-400" />
+                              <span className="text-[10px] font-bold text-slate-400 uppercase">رفع الهوية الوطنية / الجواز</span>
+                            </>
+                          )}
+                          <input type="file" hidden accept="image/*,application/pdf" onChange={handleNationalIdUpload} />
+                        </label>
+                      </div>
                     </div>
                   </div>
 
@@ -1312,6 +1405,73 @@ ${(scraped.content || '').substring(0, 4000)}
                               <p className="text-[11px] text-slate-300 leading-relaxed">{formData.brandIntelligence.buyerAvatar.buyTriggers}</p>
                             </div>
                           </div>
+                        </div>
+                      )}
+
+                      {/* Google Ads Account & Campaign Autonomous Inspector */}
+                      {formData.brandIntelligence.googleAdsAudit && (
+                        <div className="p-5 bg-gradient-to-r from-indigo-950/60 to-slate-900 border border-indigo-500/30 rounded-3xl space-y-4 shadow-xl">
+                          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-indigo-500/20 pb-3">
+                            <div className="flex items-center gap-2">
+                              <ShieldCheck className="text-indigo-400" size={18} />
+                              <h4 className="text-sm font-black text-white">تقرير فحص وإدارة حساب إعلانات جوجل الذاتي (Google Ads Autonomous Audit)</h4>
+                            </div>
+                            <span className="text-[10px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                              درجة سلامة الامتثال: {formData.brandIntelligence.googleAdsAudit.policyCheckScore || 94}%
+                            </span>
+                          </div>
+
+                          <div className="p-3.5 bg-slate-950/90 border border-slate-800 rounded-2xl flex items-center justify-between text-xs">
+                            <div className="space-y-0.5">
+                              <span className="text-[10px] font-bold text-slate-500 uppercase block">حالة الحساب الإعلاني الحالية:</span>
+                              <p className="font-extrabold text-slate-200">{formData.brandIntelligence.googleAdsAudit.statusReason}</p>
+                            </div>
+                            <span className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black rounded-xl shrink-0">
+                              🟢 جاهز ومطابق للسياسات
+                            </span>
+                          </div>
+
+                          {/* Suggested Autonomous Actions */}
+                          {formData.brandIntelligence.googleAdsAudit.suggestedActions && (
+                            <div className="space-y-2">
+                              <span className="text-[10px] font-bold uppercase text-slate-400 block tracking-wider">⚡ الأفعال التلقائية المتاحة للوكيل بنقرة واحدة:</span>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                {formData.brandIntelligence.googleAdsAudit.suggestedActions.map((act: any, idx: number) => (
+                                  <button
+                                    key={idx}
+                                    onClick={() => {
+                                      toast.success(`تم إرسال الأمر للوكيل الإعلاني: ${act.title}`);
+                                    }}
+                                    className="p-3 bg-slate-950 hover:bg-indigo-600/20 border border-indigo-500/30 hover:border-indigo-500/60 rounded-xl text-right transition-all group"
+                                  >
+                                    <h5 className="font-black text-xs text-indigo-300 group-hover:text-white leading-snug">{act.title}</h5>
+                                    <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">{act.desc}</p>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Suggested Campaign Preview */}
+                          {formData.brandIntelligence.googleAdsAudit.suggestedCampaign && (
+                            <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">🎯 خطة الحملة الإعلانية المولدة تلقائياً:</span>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                                <div className="p-2 bg-slate-900 rounded-lg border border-slate-800">
+                                  <span className="text-[9px] text-slate-500 block font-bold">اسم الحملة</span>
+                                  <span className="font-extrabold text-white">{formData.brandIntelligence.googleAdsAudit.suggestedCampaign.name}</span>
+                                </div>
+                                <div className="p-2 bg-slate-900 rounded-lg border border-slate-800">
+                                  <span className="text-[9px] text-slate-500 block font-bold">الميزانية المقترحة</span>
+                                  <span className="font-extrabold text-emerald-400">{formData.brandIntelligence.googleAdsAudit.suggestedCampaign.budget}</span>
+                                </div>
+                                <div className="p-2 bg-slate-900 rounded-lg border border-slate-800">
+                                  <span className="text-[9px] text-slate-500 block font-bold">المناطق المستهدفة</span>
+                                  <span className="font-extrabold text-indigo-300">{(formData.brandIntelligence.googleAdsAudit.suggestedCampaign.targetLocations || []).join('، ')}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

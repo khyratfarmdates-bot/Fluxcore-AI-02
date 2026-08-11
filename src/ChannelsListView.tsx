@@ -211,6 +211,7 @@ export function ChannelsListView({
 
   const getPlatformIcon = (platform: string) => {
     const p = platform.toLowerCase();
+    if (p.includes("google")) return <BrandLogo provider="google" size={24} />;
     if (p.includes("youtube")) return <BrandLogo provider="youtube" size={32} />;
     if (p.includes("x") || p.includes("twitter")) return <BrandLogo provider="x" size={24} />;
     if (p.includes("tiktok")) return <BrandLogo provider="tiktok" size={24} />;
@@ -223,6 +224,7 @@ export function ChannelsListView({
 
   const getPlatformColor = (platform: string) => {
     const p = platform.toLowerCase();
+    if (p.includes("google")) return "bg-amber-500/10 border border-amber-500/20 text-amber-400 shadow-amber-500/5";
     if (p.includes("youtube")) return "bg-red-500/10 border border-red-500/20 text-red-500 shadow-red-500/5";
     if (p.includes("x") || p.includes("twitter")) return "bg-black border border-slate-800 text-white";
     if (p.includes("tiktok")) return "bg-slate-950 border border-slate-800 text-white";
@@ -300,6 +302,7 @@ export function ChannelsListView({
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 relative z-10">
               {[
                 { id: "youtube", name: "YouTube", color: "hover:border-red-500/50 hover:text-red-400 bg-red-500/5" },
+                { id: "google_ads", name: "Google Ads", color: "hover:border-amber-500/50 hover:text-amber-400 bg-amber-500/5" },
                 { id: "x", name: "X / Twitter", color: "hover:border-white/50 hover:text-white bg-white/5" },
                 { id: "tiktok", name: "TikTok", color: "hover:border-teal-500/50 hover:text-teal-400 bg-teal-500/5" },
                 { id: "facebook", name: "Facebook", color: "hover:border-blue-600/50 hover:text-blue-400 bg-blue-600/5" },
@@ -403,48 +406,168 @@ export function ChannelsListView({
                     </span>
                   </div>
 
-                  {/* Enhanced 2x2 Bento Stat Grid */}
-                  <div className="mt-6 grid grid-cols-2 gap-3 relative z-10">
-                    {/* Followers */}
-                    <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
-                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
-                        {isAr ? "المتابعون" : "Followers"}
-                      </span>
-                      <span className="text-base font-black tracking-tight text-white group-hover:text-indigo-300 transition-colors">
-                        {stats.followers.toLocaleString()}
-                      </span>
-                    </div>
+                  {/* Enhanced Platform-Specific 2x2 Bento Stat Grid */}
+                  {(() => {
+                    const pKey = platformName.toLowerCase();
+                    const isGAds = pKey.includes("google") || platform.id.includes("google_ads");
+                    const isX = pKey.includes("x") || pKey.includes("twitter");
+                    const isLIn = pKey.includes("linkedin");
 
-                    {/* Views */}
-                    <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
-                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
-                        {isAr ? "المشاهدات" : "Views"}
-                      </span>
-                      <span className="text-base font-black tracking-tight text-white">
-                        {stats.views.toLocaleString()}
-                      </span>
-                    </div>
+                    if (isGAds) {
+                      return (
+                        <div className="mt-6 grid grid-cols-2 gap-3 relative z-10">
+                          <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                              {isAr ? "إجمالي الإنفاق" : "Total Spend"}
+                            </span>
+                            <span className="text-base font-black tracking-tight text-amber-400 font-mono">
+                              0.00 ر.س
+                            </span>
+                          </div>
+                          <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                              {isAr ? "النقرات والظهور" : "Clicks & Impr."}
+                            </span>
+                            <span className="text-base font-black tracking-tight text-white font-mono">
+                              0 / 0
+                            </span>
+                          </div>
+                          <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                              {isAr ? "نسبة النقر (CTR)" : "CTR / CPC"}
+                            </span>
+                            <span className="text-base font-black tracking-tight text-emerald-400 font-mono">
+                              0.0%
+                            </span>
+                          </div>
+                          <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                              {isAr ? "الحملات النشطة" : "Active Campaigns"}
+                            </span>
+                            <span className="text-base font-black tracking-tight text-indigo-400 font-mono">
+                              0
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
 
-                    {/* Engagement Rate */}
-                    <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
-                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
-                        {isAr ? "التفاعل" : "Engagement"}
-                      </span>
-                      <span className="text-base font-black tracking-tight text-emerald-400 font-mono">
-                        {stats.engagementRate}%
-                      </span>
-                    </div>
+                    if (isX) {
+                      return (
+                        <div className="mt-6 grid grid-cols-2 gap-3 relative z-10">
+                          <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                              {isAr ? "المتابعون" : "Followers"}
+                            </span>
+                            <span className="text-base font-black tracking-tight text-white">
+                              {stats.followers.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                              {isAr ? "الانطباعات" : "Impressions"}
+                            </span>
+                            <span className="text-base font-black tracking-tight text-white">
+                              {stats.views.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                              {isAr ? "الريتويت والتفاعل" : "Engagement"}
+                            </span>
+                            <span className="text-base font-black tracking-tight text-emerald-400 font-mono">
+                              {stats.engagementRate}%
+                            </span>
+                          </div>
+                          <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                              {isAr ? "التغريدات" : "Total Tweets"}
+                            </span>
+                            <span className="text-base font-black tracking-tight text-indigo-400 font-mono">
+                              {stats.posts}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
 
-                    {/* Total Posts */}
-                    <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
-                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
-                        {isAr ? "المنشورات" : "Total Posts"}
-                      </span>
-                      <span className="text-base font-black tracking-tight text-indigo-400 font-mono">
-                        {stats.posts}
-                      </span>
-                    </div>
-                  </div>
+                    if (isLIn) {
+                      return (
+                        <div className="mt-6 grid grid-cols-2 gap-3 relative z-10">
+                          <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                              {isAr ? "الشبكة والربط" : "Connections"}
+                            </span>
+                            <span className="text-base font-black tracking-tight text-white">
+                              {stats.followers.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                              {isAr ? "قراء المقالات" : "Post Views"}
+                            </span>
+                            <span className="text-base font-black tracking-tight text-white">
+                              {stats.views.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                              {isAr ? "تفاعل B2B" : "B2B Rate"}
+                            </span>
+                            <span className="text-base font-black tracking-tight text-emerald-400 font-mono">
+                              {stats.engagementRate}%
+                            </span>
+                          </div>
+                          <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                              {isAr ? "المقالات والمنشورات" : "Posts"}
+                            </span>
+                            <span className="text-base font-black tracking-tight text-indigo-400 font-mono">
+                              {stats.posts}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // YouTube / Default
+                    return (
+                      <div className="mt-6 grid grid-cols-2 gap-3 relative z-10">
+                        <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
+                          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                            {isAr ? "المشتركون" : "Subscribers"}
+                          </span>
+                          <span className="text-base font-black tracking-tight text-white group-hover:text-indigo-300 transition-colors">
+                            {stats.followers.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
+                          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                            {isAr ? "المشاهدات" : "Views"}
+                          </span>
+                          <span className="text-base font-black tracking-tight text-white">
+                            {stats.views.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
+                          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                            {isAr ? "التفاعل" : "Engagement"}
+                          </span>
+                          <span className="text-base font-black tracking-tight text-emerald-400 font-mono">
+                            {stats.engagementRate}%
+                          </span>
+                        </div>
+                        <div className={`p-3 rounded-2xl ${theme === "dark" ? "bg-slate-950/40 border-slate-800/40" : "bg-slate-50 border-slate-100"} border`}>
+                          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                            {isAr ? "الفيديوهات" : "Videos"}
+                          </span>
+                          <span className="text-base font-black tracking-tight text-indigo-400 font-mono">
+                            {stats.posts}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Footer action */}

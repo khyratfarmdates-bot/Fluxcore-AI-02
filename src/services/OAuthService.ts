@@ -35,7 +35,8 @@ class OAuthService extends BaseService<OAuthState> {
     // For Google/YouTube
     if (provider === 'youtube') {
       const clientId = import.meta.env.VITE_YOUTUBE_CLIENT_ID;
-      const redirectUri = `${window.location.origin}/api/auth/google/callback`;
+      const origin = window.location.origin.replace('https://localhost', 'http://localhost');
+      const redirectUri = `${origin}/api/auth/google/callback`;
       const scopes = [
         'https://www.googleapis.com/auth/youtube.upload',
         'https://www.googleapis.com/auth/youtube.readonly',

@@ -110,16 +110,20 @@ class ExecutiveEngine {
       }
     }
 
-    // 1. Memory, Persona, and Knowledge Loading
-    const persona = await personalityEngine.getPersonaForBrand(context.brandId);
-    const recentMemories = await aiMemory.getRelevantMemory(context.brandId, undefined, 10);
-    const knowledgeContext = await systemAwareness.getSituationalContext(context.brandId);
-    const executiveInsights = await knowledgeQueryEngine.getExecutiveInsights(context.brandId);
-    const integrations = await IntegrationEngine.getActiveIntegrations(context.brandId);
+    // 1. Parallel Fast Memory, Persona, and Knowledge Loading
+    const [persona, recentMemories, knowledgeContext, executiveInsights, integrations] = await Promise.all([
+      personalityEngine.getPersonaForBrand(context.brandId),
+      aiMemory.getRelevantMemory(context.brandId, undefined, 5),
+      systemAwareness.getSituationalContext(context.brandId),
+      knowledgeQueryEngine.getExecutiveInsights(context.brandId),
+      IntegrationEngine.getActiveIntegrations(context.brandId)
+    ]);
+
     const connectedProviders = integrations.filter(i => i.status === 'connected').map(i => i.provider);
     const libraryContext = knowledgeLibraryService.getActiveKnowledgeContext(context.brandId);
     
-    await aiMemory.saveMemory(context.brandId, 'interaction', 'USER_REQUEST', { message: userMessage }, 0.5);
+    // Save memory asynchronously without blocking the main response path
+    aiMemory.saveMemory(context.brandId, 'interaction', 'USER_REQUEST', { message: userMessage }, 0.5).catch(console.error);
 
     // 2. Save User Message
     const userMsg: ExecutiveMessage = {

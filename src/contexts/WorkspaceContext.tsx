@@ -32,6 +32,9 @@ export interface BrandIdentity {
   taxId?: string;
   businessCountry?: string;
   googleAdsCustomerId?: string;
+  authorizedName?: string;
+  crDocumentUrl?: string;
+  nationalIdUrl?: string;
   brandIntelligence?: {
     seoHealthScore?: number;
     copyQualityScore?: number;
@@ -42,6 +45,15 @@ export interface BrandIdentity {
     adAngles?: { title: string; desc: string; targetHook: string }[];
     buyerAvatar?: { demographics: string; painPoints: string; buyTriggers: string };
     missingRequirements?: { title: string; desc: string; severity: 'critical' | 'warning' | 'info'; actionKey: string }[];
+    googleAdsAudit?: {
+      accountStatus: 'active' | 'suspended' | 'needs_verification' | 'no_account' | 'billing_issue';
+      statusReason: string;
+      policyCheckScore: number;
+      suspensionRisks: string[];
+      suggestedActions: { title: string; desc: string; actionType: 'create_campaign' | 'generate_ads' | 'submit_verification' | 'create_account' }[];
+      suggestedCampaign?: { name: string; budget: string; keywords: string[]; targetLocations: string[] };
+      generatedAds?: { headline: string; description: string; callToAction: string }[];
+    };
     lastScannedAt?: string;
   };
   usageStats?: { tokensUsed: number, imageGenerations: number, modelsUsed: Record<string, number> };
